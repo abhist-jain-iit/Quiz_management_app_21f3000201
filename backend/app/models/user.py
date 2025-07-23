@@ -1,42 +1,32 @@
-from flask_login import UserMixin
-from werkzeug.security import generate_password_hash, check_password_hash
-from .base import BaseModel
-from app.database import db
+from flask_security import UserMixin, RoleMixin
+from .base import BaseModel, db
 
-# UserMixin adds basic login-related features automatically. we dont have to write them separately.
-# Like checking if the user is logged in or getting the user's ID
+class UserRole(BaseModel):
+    __tablename__ = 'user_roles'
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+    __table_args__ = (db.UniqueConstraint('user_id', 'role_id'),)
+
+class Role(BaseModel, RoleMixin):
+    __tablename__ = 'roles'
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    description = db.Column(db.String(255))
+    # Flask-Security-Too: users backref is set in User
+    def __repr__(self):
+        return f'<Role {self.name}>'
 
 class User(BaseModel, UserMixin):
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
-    full_name = db.Column(db.String(60), nullable=False)
-    qualification = db.Column(db.String(100), nullable=True)
-    dob = db.Column(db.Date, nullable=True)
-    role = db.Column(db.String(100), nullable=False, default='user')
-    is_admin = db.Column(db.Boolean, default=False)
-    is_active = db.Column(db.Boolean, default=True)
-
-    # Relationships
-    scores = db.relationship("Score", backref="user", cascade="all, delete-orphan", lazy=True)
-        # backref and back_populates: They are used in SQLAlchemy to link two tables together.
-        # Use **backref** when you want quick setup.
-        # Use **back_populates** when you want more control or when customizing both sides of the relationship.
-
-    def set_password(self, password):
-        """Set password hash"""
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        """Check if provided password matches hash"""
-        return check_password_hash(self.password_hash, password)
-
-    def convert_to_json(self):
-        return {
-            'id': self.id,
-            'name': self.full_name,
-            'email': self.email,
-            'qualification': self.qualification,
-            'dob': self.dob.strftime('%Y-%m-%d') if self.dob else None,
-            'role': self.role,
-            'is_admin': self.is_admin
-        }
+    __tablename__ = 'users'
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    fs_uniquifier = db.Column(db.String(64), unique=True, nullable=False)
+    fs_token_uniquifier = db.Column(db.String(64), unique=True, nullable=False)
+    full_name = db.Column(db.String(100), nullable=False)
+    qualification = db.Column(db.String(100))
+    date_of_birth = db.Column(db.Date)
+    # Flask-Security-Too: relationship to roles
+    roles = db.relationship('Role', secondary='user_roles', backref=db.backref('users', lazy='dynamic'))
+    scores = db.relationship('Score', backref='user', lazy='dynamic')
+    def __repr__(self):
+        return f'<User {self.username}>'

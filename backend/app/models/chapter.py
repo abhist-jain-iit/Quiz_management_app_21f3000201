@@ -1,20 +1,20 @@
-from .base import BaseModel
-from app.database import db
+from .base import BaseModel, db
 
 class Chapter(BaseModel):
-    name = db.Column(db.String(120), nullable=False)
-    description = db.Column(db.String(500), nullable=False)
-    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
-
+    __tablename__ = 'chapters'
+    
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subjects.id'), nullable=False)
+    
     # Relationships
-    quizzes = db.relationship("Quiz", backref="chapter", cascade="all, delete-orphan", lazy=True)
+    quizzes = db.relationship('Quiz', backref='chapter', lazy='dynamic', cascade='all, delete-orphan')
 
-    def convert_to_json(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'description': self.description,
-            'subject_id': self.subject_id,
-            'subject_name': self.subject.name if self.subject else None,
-            'quizzes_count': len(self.quizzes) if self.quizzes else 0
-        }
+    # we have two things backref and back_populates.
+    # backref uses one way and back_populates uses two way.
+    
+    # Unique constraint for chapter name within a subject
+    __table_args__ = (db.UniqueConstraint('name', 'subject_id'),)
+    
+    def __repr__(self):
+        return f'<Chapter {self.name}>'
