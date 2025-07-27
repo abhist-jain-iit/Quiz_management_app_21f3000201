@@ -1,5 +1,7 @@
 flask
 flask_sqlalchemy
-flask_security_too
 flask_restful
 python-dotenv
+flask_jwt_extended
+werkzeug
+requests
