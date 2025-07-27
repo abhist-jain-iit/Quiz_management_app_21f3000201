@@ -1,4 +1,4 @@
-from .base import db
+from ..database import db
 from .user import User, Role, UserRole
 from .subject import Subject
 from .chapter import Chapter

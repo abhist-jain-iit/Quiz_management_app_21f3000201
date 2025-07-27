@@ -13,9 +13,12 @@ def admin_required():
         @wraps(fn)
         def decorator(*args, **kwargs):
             current_user_id = get_jwt_identity()
-            user = User.query.get(current_user_id)
-            if not user or not user.is_admin():
-                return jsonify({"error": "Admin access required"}), 403
+            if current_user_id:
+                user = User.query.get(int(current_user_id))
+                if not user or not user.is_admin():
+                    return {"error": "Admin access required"}, 403
+            else:
+                return {"error": "Authentication required"}, 401
             return fn(*args, **kwargs)
         return decorator
     return wrapper
@@ -26,9 +29,12 @@ def user_required():
         @wraps(fn)
         def decorator(*args, **kwargs):
             current_user_id = get_jwt_identity()
-            user = User.query.get(current_user_id)
-            if not user or not user.is_active:
-                return jsonify({"error": "User access required"}), 403
+            if current_user_id:
+                user = User.query.get(int(current_user_id))
+                if not user or not user.is_active:
+                    return {"error": "User access required"}, 403
+            else:
+                return {"error": "Authentication required"}, 401
             return fn(*args, **kwargs)
         return decorator
     return wrapper
@@ -42,8 +48,8 @@ def authenticate_user(username, password):
 
 def create_tokens(user):
     """Create access and refresh tokens for user"""
-    access_token = create_access_token(identity=user.id)
-    refresh_token = create_refresh_token(identity=user.id)
+    access_token = create_access_token(identity=str(user.id))
+    refresh_token = create_refresh_token(identity=str(user.id))
     return access_token, refresh_token
 
 def init_admin_user():
@@ -70,10 +76,10 @@ def init_admin_user():
             full_name='Quiz Master Admin',
             qualification='Administrator'
         )
-        admin_user.set_password('admin123')  # Default password
+        admin_user.set_password('Admin@123')  # Updated password
         admin_user.roles.append(admin_role)
         db.session.add(admin_user)
         db.session.commit()
-        print("Admin user created with username: admin, password: admin123")
+        print("Admin user created with username: admin, password: Admin@123")
     
     return admin_user 

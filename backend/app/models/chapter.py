@@ -16,5 +16,16 @@ class Chapter(BaseModel):
     # Unique constraint for chapter name within a subject
     __table_args__ = (db.UniqueConstraint('name', 'subject_id'),)
     
+    def convert_to_json(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'subject_id': self.subject_id,
+            'subject_name': self.subject.name if self.subject else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+    
     def __repr__(self):
         return f'<Chapter {self.name}>'
