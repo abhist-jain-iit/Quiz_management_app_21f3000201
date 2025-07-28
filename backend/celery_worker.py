@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-"""
-Celery worker entry point for Quiz Master application.
-Run this file to start the Celery worker process.
-
-Usage:
-    python celery_worker.py worker --loglevel=info
-    python celery_worker.py beat --loglevel=info
-"""
-
 import os
 import sys
 from app import create_app

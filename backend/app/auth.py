@@ -8,7 +8,7 @@ from .models.user import User, Role
 from .database import db
 
 def admin_required():
-    """Decorator to require admin role"""
+    # Decorator to require admin role 
     def wrapper(fn):
         @wraps(fn)
         def decorator(*args, **kwargs):
@@ -24,7 +24,7 @@ def admin_required():
     return wrapper
 
 def user_required():
-    """Decorator to require user role"""
+    # Decorator to require user role 
     def wrapper(fn):
         @wraps(fn)
         def decorator(*args, **kwargs):
