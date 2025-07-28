@@ -1,5 +1,9 @@
 import os
+import logging
 from datetime import timedelta
+
+# Disable SQLAlchemy verbose logging
+logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -22,7 +26,7 @@ class Config:
     
     # Development Settings
     DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
-    SQLALCHEMY_ECHO = os.environ.get('SQLALCHEMY_ECHO', 'True').lower() == 'true'
+    SQLALCHEMY_ECHO = False  # Disable SQL logging
 
     # Celery and Redis configuration
     CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')

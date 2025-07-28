@@ -1,3 +1,4 @@
+import logging
 from flask import Flask, jsonify
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended.exceptions import NoAuthorizationError, InvalidHeaderError, WrongTokenError, RevokedTokenError, FreshTokenRequired
@@ -9,9 +10,16 @@ from .api.routes import init_api
 from flask_caching import Cache
 from .celery_worker import make_celery
 
+# Disable SQLAlchemy verbose logging
+logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
+
 def create_app(config_name='development'):
     app = Flask(__name__)
     app.config.from_object(config_dict[config_name])
+
+    # Disable SQLAlchemy logging
+    app.config['SQLALCHEMY_ECHO'] = False
+    logging.getLogger('sqlalchemy').setLevel(logging.ERROR)
 
     # Initialize extensions
     db.init_app(app)
