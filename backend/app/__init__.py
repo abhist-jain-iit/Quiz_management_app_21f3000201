@@ -2,6 +2,7 @@ import logging
 from flask import Flask, jsonify
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended.exceptions import NoAuthorizationError, InvalidHeaderError, WrongTokenError, RevokedTokenError, FreshTokenRequired
+from flask_cors import CORS
 from .database import db
 from .models import *
 from .config import config_dict
@@ -24,6 +25,13 @@ def create_app(config_name='development'):
     # Initialize extensions
     db.init_app(app)
     jwt = JWTManager(app)
+
+    # Initialize CORS
+    CORS(app,
+         origins=['http://localhost:8080', 'http://127.0.0.1:8080'],
+         allow_headers=['Content-Type', 'Authorization'],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+         supports_credentials=True)
     
     # Initialize cache
     cache = Cache(app, config={

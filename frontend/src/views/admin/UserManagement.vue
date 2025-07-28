@@ -187,48 +187,52 @@
 
               <div class="col-md-8">
                 <table class="table table-borderless">
-                  <tr>
-                    <td><strong>Username:</strong></td>
-                    <td>{{ selectedUser.username }}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Role:</strong></td>
-                    <td>
-                      <span
-                        class="badge"
-                        :class="
-                          selectedUser.is_admin ? 'bg-danger' : 'bg-primary'
-                        "
-                      >
-                        {{ selectedUser.is_admin ? "Admin" : "User" }}
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><strong>Status:</strong></td>
-                    <td>
-                      <span
-                        class="badge"
-                        :class="
-                          selectedUser.is_active ? 'bg-success' : 'bg-secondary'
-                        "
-                      >
-                        {{ selectedUser.is_active ? "Active" : "Inactive" }}
-                      </span>
-                    </td>
-                  </tr>
-                  <tr v-if="selectedUser.qualification">
-                    <td><strong>Qualification:</strong></td>
-                    <td>{{ selectedUser.qualification }}</td>
-                  </tr>
-                  <tr v-if="selectedUser.date_of_birth">
-                    <td><strong>Date of Birth:</strong></td>
-                    <td>{{ formatDate(selectedUser.date_of_birth) }}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Member Since:</strong></td>
-                    <td>{{ formatDate(selectedUser.created_at) }}</td>
-                  </tr>
+                  <tbody>
+                    <tr>
+                      <td><strong>Username:</strong></td>
+                      <td>{{ selectedUser.username }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Role:</strong></td>
+                      <td>
+                        <span
+                          class="badge"
+                          :class="
+                            selectedUser.is_admin ? 'bg-danger' : 'bg-primary'
+                          "
+                        >
+                          {{ selectedUser.is_admin ? "Admin" : "User" }}
+                        </span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Status:</strong></td>
+                      <td>
+                        <span
+                          class="badge"
+                          :class="
+                            selectedUser.is_active
+                              ? 'bg-success'
+                              : 'bg-secondary'
+                          "
+                        >
+                          {{ selectedUser.is_active ? "Active" : "Inactive" }}
+                        </span>
+                      </td>
+                    </tr>
+                    <tr v-if="selectedUser.qualification">
+                      <td><strong>Qualification:</strong></td>
+                      <td>{{ selectedUser.qualification }}</td>
+                    </tr>
+                    <tr v-if="selectedUser.date_of_birth">
+                      <td><strong>Date of Birth:</strong></td>
+                      <td>{{ formatDate(selectedUser.date_of_birth) }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Member Since:</strong></td>
+                      <td>{{ formatDate(selectedUser.created_at) }}</td>
+                    </tr>
+                  </tbody>
                 </table>
               </div>
             </div>

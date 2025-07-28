@@ -3,6 +3,7 @@ flask_sqlalchemy
 flask_restful
 python-dotenv
 flask_jwt_extended
+flask-cors
 werkzeug
 requests
 redis
