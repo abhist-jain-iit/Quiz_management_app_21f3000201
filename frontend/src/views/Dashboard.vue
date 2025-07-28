@@ -311,27 +311,21 @@ export default {
         // Add timestamp for cache busting on refresh
         const timestamp = Date.now();
 
-        // Load data in parallel for faster loading
-        const [
-          dashResponse,
-          quizzesResponse,
-          subjectsResponse,
-          scoresResponse,
-        ] = await Promise.all([
-          api.getDashboard({ _t: timestamp }),
-          api.getQuizzes({ is_active: true, _t: timestamp }),
-          api.getSubjects({ _t: timestamp }),
-          api.getScores({ _t: timestamp }),
-        ]);
+        // Single API call to get all dashboard data
+        const dashResponse = await api.getDashboard({ _t: timestamp });
 
-        console.log("All data loaded");
+        console.log("Dashboard data loaded");
         dashboardData.value = dashResponse;
-        quizzes.value = Array.isArray(quizzesResponse) ? quizzesResponse : [];
-        subjects.value = Array.isArray(subjectsResponse)
-          ? subjectsResponse
+
+        // Extract data from dashboard response
+        quizzes.value = Array.isArray(dashResponse.quizzes)
+          ? dashResponse.quizzes
           : [];
-        recentScores.value = Array.isArray(scoresResponse)
-          ? scoresResponse.slice(0, 5)
+        subjects.value = Array.isArray(dashResponse.subjects)
+          ? dashResponse.subjects
+          : [];
+        recentScores.value = Array.isArray(dashResponse.recent_scores)
+          ? dashResponse.recent_scores.slice(0, 5)
           : [];
 
         // Initialize charts after data is loaded
@@ -408,38 +402,75 @@ export default {
 
       // Top Quizzes Chart
       const subjectCtx = document.getElementById("subjectChart");
-      if (subjectCtx && dashboardData.value?.charts?.top_quizzes) {
-        subjectChart = new Chart(subjectCtx, {
-          type: "doughnut",
-          data: {
-            labels: dashboardData.value.charts.top_quizzes.map(
-              (item) => item.title
-            ),
-            datasets: [
-              {
-                data: dashboardData.value.charts.top_quizzes.map(
-                  (item) => item.avg_percentage
-                ),
-                backgroundColor: [
-                  "#FF6384",
-                  "#36A2EB",
-                  "#FFCE56",
-                  "#4BC0C0",
-                  "#9966FF",
-                  "#FF9F40",
-                ],
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                position: "bottom",
+      if (subjectCtx) {
+        const topQuizzesData = dashboardData.value?.charts?.top_quizzes || [];
+
+        // If user has no quiz attempts, show a message
+        if (topQuizzesData.length === 0) {
+          // Create a simple chart with a message
+          subjectChart = new Chart(subjectCtx, {
+            type: "doughnut",
+            data: {
+              labels: ["No Quiz Attempts Yet"],
+              datasets: [
+                {
+                  data: [1],
+                  backgroundColor: ["#E0E0E0"],
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  position: "bottom",
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function () {
+                      return "Start taking quizzes to see your performance!";
+                    },
+                  },
+                },
               },
             },
-          },
-        });
+          });
+        } else {
+          subjectChart = new Chart(subjectCtx, {
+            type: "doughnut",
+            data: {
+              labels: topQuizzesData.map((item) => item.title),
+              datasets: [
+                {
+                  data: topQuizzesData.map((item) => item.avg_percentage),
+                  backgroundColor: [
+                    "#FF6384",
+                    "#36A2EB",
+                    "#FFCE56",
+                    "#4BC0C0",
+                    "#9966FF",
+                    "#FF9F40",
+                  ],
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  position: "bottom",
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function (context) {
+                      return context.label + ": " + context.parsed + "%";
+                    },
+                  },
+                },
+              },
+            },
+          });
+        }
       }
     };
 

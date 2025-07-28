@@ -123,7 +123,53 @@ class DashboardApi(Resource):
             })
         
         monthly_data.reverse()
-        
+
+        # User Registration Trend (last 6 months)
+        user_registration_data = []
+        for i in range(6):
+            month_start = datetime.now().replace(day=1) - timedelta(days=30*i)
+            month_end = month_start.replace(day=1) + timedelta(days=32)
+            month_end = month_end.replace(day=1) - timedelta(days=1)
+
+            new_users = User.query.filter(
+                User.created_at >= month_start,
+                User.created_at <= month_end
+            ).count()
+
+            user_registration_data.append({
+                'date': month_start.strftime('%b %Y'),
+                'count': new_users
+            })
+
+        user_registration_data.reverse()
+
+        # Quiz Performance Overview (score distribution)
+        quiz_performance_overview = {
+            'poor': 0,      # 0-40%
+            'average': 0,   # 41-60%
+            'good': 0,      # 61-80%
+            'excellent': 0  # 81-100%
+        }
+
+        # Get all scores with their percentages
+        scores_with_percentage = db.session.query(
+            Score.total_scored,
+            func.sum(Question.marks).label('total_possible')
+        ).join(Question, Score.quiz_id == Question.quiz_id)\
+         .group_by(Score.id).all()
+
+        for total_scored, total_possible in scores_with_percentage:
+            if total_possible and total_possible > 0:
+                percentage = (total_scored / total_possible) * 100
+                if percentage <= 40:
+                    quiz_performance_overview['poor'] += 1
+                elif percentage <= 60:
+                    quiz_performance_overview['average'] += 1
+                elif percentage <= 80:
+                    quiz_performance_overview['good'] += 1
+                else:
+                    quiz_performance_overview['excellent'] += 1
+
         return {
             'dashboard_type': 'admin',
             'statistics': {
@@ -152,6 +198,8 @@ class DashboardApi(Resource):
                     {'type': 'Regular Users', 'count': regular_users}
                 ]
             },
+            'user_registration_trend': user_registration_data,
+            'quiz_performance_overview': quiz_performance_overview,
             'recent_scores': recent_scores_data
         }, 200
     
@@ -236,7 +284,67 @@ class DashboardApi(Resource):
             })
         
         monthly_data.reverse()
-        
+
+        # Top quizzes performance for this user (quizzes they've attempted)
+        user_quiz_performance = []
+        if user_scores:
+            # Get unique quizzes the user has attempted
+            attempted_quiz_ids = list(set(score.quiz_id for score in user_scores))
+
+            for quiz_id in attempted_quiz_ids:
+                quiz = Quiz.query.get(quiz_id)
+                if quiz:
+                    # Get all attempts for this quiz by this user
+                    quiz_attempts = [score for score in user_scores if score.quiz_id == quiz_id]
+
+                    if quiz_attempts:
+                        # Calculate average percentage for this quiz
+                        total_percentage = 0
+                        valid_attempts = 0
+
+                        for attempt in quiz_attempts:
+                            attempt_json = attempt.convert_to_json()
+                            if attempt_json['percentage'] > 0:
+                                total_percentage += attempt_json['percentage']
+                                valid_attempts += 1
+
+                        if valid_attempts > 0:
+                            avg_percentage = total_percentage / valid_attempts
+                            user_quiz_performance.append({
+                                'title': quiz.title,
+                                'attempts': len(quiz_attempts),
+                                'avg_percentage': round(avg_percentage, 2)
+                            })
+
+            # Sort by average percentage and limit to top 5
+            user_quiz_performance.sort(key=lambda x: x['avg_percentage'], reverse=True)
+            user_quiz_performance = user_quiz_performance[:5]
+
+        # Get available quizzes with attempt counts for user
+        available_quizzes = db.session.query(Quiz).options(
+            db.joinedload(Quiz.chapter).joinedload(Chapter.subject)
+        ).filter_by(is_active=True).all()
+
+        quizzes_data = []
+        for quiz in available_quizzes:
+            quiz_json = quiz.convert_to_json()
+            # Add attempt count for this user
+            user_attempts = Score.query.filter_by(quiz_id=quiz.id, user_id=user.id).count()
+            quiz_json['user_attempts'] = user_attempts
+            quiz_json['attempts_left'] = max(0, 5 - user_attempts)
+            quizzes_data.append(quiz_json)
+
+        # Get subjects for filtering
+        subjects_data = [subject.convert_to_json() for subject in Subject.query.all()]
+
+        # Get recent scores for user
+        recent_scores_data = []
+        if user_scores:
+            recent_user_scores = Score.query.options(
+                db.joinedload(Score.quiz)
+            ).filter_by(user_id=user.id).order_by(Score.time_stamp_of_attempt.desc()).limit(5).all()
+            recent_scores_data = [score.convert_to_json() for score in recent_user_scores]
+
         return {
             'dashboard_type': 'user',
             'statistics': {
@@ -251,11 +359,15 @@ class DashboardApi(Resource):
             'charts': {
                 'recent_performance': recent_performance,
                 'available_quizzes': available_quizzes_data,
-                'monthly_activity': monthly_data
+                'monthly_activity': monthly_data,
+                'top_quizzes': user_quiz_performance
             },
             'user_info': {
                 'full_name': user.full_name,
                 'qualification': user.qualification,
                 'member_since': user.created_at.strftime('%B %Y') if user.created_at else None
-            }
-        }, 200 
+            },
+            'quizzes': quizzes_data,
+            'subjects': subjects_data,
+            'recent_scores': recent_scores_data
+        }, 200

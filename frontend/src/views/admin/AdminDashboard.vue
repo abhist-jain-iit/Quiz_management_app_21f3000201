@@ -335,7 +335,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import api from "../../services/api";
 import Chart from "chart.js/auto";
 
@@ -351,6 +351,10 @@ export default {
     const dashboardData = ref(null);
     const recentUsers = ref([]);
     const recentAttempts = ref([]);
+
+    // Chart instances for proper cleanup
+    let userTrendChart = null;
+    let performanceOverviewChart = null;
 
     const loadDashboard = async () => {
       loading.value = true;
@@ -402,10 +406,20 @@ export default {
     };
 
     const initCharts = () => {
+      // Destroy existing charts before creating new ones
+      if (userTrendChart) {
+        userTrendChart.destroy();
+        userTrendChart = null;
+      }
+      if (performanceOverviewChart) {
+        performanceOverviewChart.destroy();
+        performanceOverviewChart = null;
+      }
+
       // User Registration Trend Chart
       const userTrendCtx = document.getElementById("userTrendChart");
       if (userTrendCtx && dashboardData.value?.user_registration_trend) {
-        new Chart(userTrendCtx, {
+        userTrendChart = new Chart(userTrendCtx, {
           type: "line",
           data: {
             labels: dashboardData.value.user_registration_trend.map(
@@ -439,7 +453,7 @@ export default {
         "performanceOverviewChart"
       );
       if (performanceCtx && dashboardData.value?.quiz_performance_overview) {
-        new Chart(performanceCtx, {
+        performanceOverviewChart = new Chart(performanceCtx, {
           type: "bar",
           data: {
             labels: ["0-40%", "41-60%", "61-80%", "81-100%"],
@@ -517,6 +531,18 @@ export default {
 
     onMounted(() => {
       loadDashboard();
+    });
+
+    onUnmounted(() => {
+      // Clean up charts when component is unmounted
+      if (userTrendChart) {
+        userTrendChart.destroy();
+        userTrendChart = null;
+      }
+      if (performanceOverviewChart) {
+        performanceOverviewChart.destroy();
+        performanceOverviewChart = null;
+      }
     });
 
     return {
