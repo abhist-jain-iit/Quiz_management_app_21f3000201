@@ -58,9 +58,14 @@ class DashboardApi(Resource):
 
             for score in scores:
                 if score.total_questions and score.total_questions > 0:
-                    percentage = (score.total_scored / (score.total_questions * 25)) * 100  # Assuming 25 marks per question
-                    total_percentage += percentage
-                    valid_scores += 1
+                    # Get the actual total possible marks for this quiz
+                    quiz = Quiz.query.get(score.quiz_id)
+                    if quiz:
+                        total_possible_marks = db.session.query(func.sum(Question.marks)).filter_by(quiz_id=quiz.id).scalar() or 0
+                        if total_possible_marks > 0:
+                            percentage = (score.total_scored / total_possible_marks) * 100
+                            total_percentage += percentage
+                            valid_scores += 1
 
             avg_percentage = total_percentage / valid_scores if valid_scores > 0 else 0
         else:
@@ -77,14 +82,18 @@ class DashboardApi(Resource):
 
             if attempts > 0:
                 total_percentage = 0
-                for score in quiz_scores:
-                    if score.total_questions and score.total_questions > 0:
-                        # Calculate percentage based on total possible marks
-                        total_possible_marks = score.total_questions * 25  # 25 marks per question
-                        percentage = (score.total_scored / total_possible_marks) * 100
-                        total_percentage += percentage
+                # Get the actual total possible marks for this quiz
+                total_possible_marks = db.session.query(func.sum(Question.marks)).filter_by(quiz_id=quiz.id).scalar() or 0
 
-                avg_percentage = total_percentage / attempts
+                if total_possible_marks > 0:
+                    for score in quiz_scores:
+                        if score.total_questions and score.total_questions > 0:
+                            percentage = (score.total_scored / total_possible_marks) * 100
+                            total_percentage += percentage
+
+                    avg_percentage = total_percentage / attempts
+                else:
+                    avg_percentage = 0
 
                 top_quizzes_data.append({
                     'title': quiz.title,

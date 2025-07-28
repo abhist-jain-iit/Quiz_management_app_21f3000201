@@ -19,17 +19,63 @@
 
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav me-auto">
-            <li class="nav-item" v-if="isAuthenticated">
+            <li class="nav-item" v-if="isAuthenticated && !isAdmin">
               <router-link class="nav-link" to="/dashboard">
                 <i class="bi bi-speedometer2 me-1"></i>
                 Dashboard
               </router-link>
             </li>
+
+            <!-- Admin Navigation - Always visible for admins -->
             <li class="nav-item" v-if="isAdmin">
-              <router-link class="nav-link" to="/admin">
+              <router-link class="nav-link" to="/admin" active-class="active">
+                <i class="bi bi-speedometer2 me-1"></i>
+                Admin Dashboard
+              </router-link>
+            </li>
+            <li class="nav-item dropdown" v-if="isAdmin">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
                 <i class="bi bi-gear-fill me-1"></i>
                 Admin Panel
-              </router-link>
+              </a>
+              <ul class="dropdown-menu">
+                <li>
+                  <router-link class="dropdown-item" to="/admin/subjects">
+                    <i class="bi bi-journal-text me-2"></i>
+                    Subjects
+                  </router-link>
+                </li>
+                <li>
+                  <router-link class="dropdown-item" to="/admin/chapters">
+                    <i class="bi bi-book me-2"></i>
+                    Chapters
+                  </router-link>
+                </li>
+                <li>
+                  <router-link class="dropdown-item" to="/admin/quizzes">
+                    <i class="bi bi-patch-question me-2"></i>
+                    Quizzes
+                  </router-link>
+                </li>
+                <li>
+                  <router-link class="dropdown-item" to="/admin/questions">
+                    <i class="bi bi-question-circle me-2"></i>
+                    Questions
+                  </router-link>
+                </li>
+                <li>
+                  <router-link class="dropdown-item" to="/admin/users">
+                    <i class="bi bi-people me-2"></i>
+                    Users
+                  </router-link>
+                </li>
+              </ul>
             </li>
           </ul>
 
@@ -400,5 +446,68 @@ body {
 
 .navbar-toggler-icon {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Breadcrumb and Navigation Styling */
+.breadcrumb {
+  background-color: var(--card-bg) !important;
+  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.breadcrumb-item {
+  color: var(--text-color) !important;
+}
+
+.breadcrumb-item.active {
+  color: var(--muted-color) !important;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  color: var(--muted-color) !important;
+}
+
+.breadcrumb a {
+  color: var(--bs-primary) !important;
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  color: var(--bs-primary) !important;
+  text-decoration: underline;
+}
+
+/* Admin dropdown menu styling */
+.dropdown-menu {
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.dropdown-item {
+  padding: 0.5rem 1rem !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.dropdown-item:hover {
+  background-color: var(--bs-primary) !important;
+  color: #ffffff !important;
+}
+
+.dropdown-item i {
+  width: 1.2rem;
+  text-align: center;
+}
+
+/* Back button styling */
+.btn-outline-secondary {
+  border-color: var(--border-color) !important;
+  color: var(--text-color) !important;
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--bs-secondary) !important;
+  border-color: var(--bs-secondary) !important;
+  color: #ffffff !important;
 }
 </style>

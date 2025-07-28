@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify, make_response
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.models import User, Score, Quiz, Chapter, Subject
+from app.models import User, Score, Quiz, Chapter, Subject, Question, db
 from app.auth import admin_required
+from sqlalchemy import func
 import csv
 import io
 from datetime import datetime
@@ -47,7 +48,10 @@ def export_user_csv_endpoint():
                 chapter = Chapter.query.get(quiz.chapter_id)
                 subject = Subject.query.get(chapter.subject_id) if chapter else None
 
-                percentage = (score.total_scored / score.total_questions * 100) if score.total_questions > 0 else 0
+                # Calculate percentage based on actual total possible marks
+                from sqlalchemy import func
+                total_possible_marks = db.session.query(func.sum(Question.marks)).filter_by(quiz_id=quiz.id).scalar() or 0
+                percentage = (score.total_scored / total_possible_marks * 100) if total_possible_marks > 0 else 0
 
                 writer.writerow([
                     quiz.title,
@@ -106,17 +110,31 @@ def export_admin_csv_endpoint():
 
             if scores:
                 total_quizzes = len(scores)
-                total_scored = sum(s.total_scored for s in scores)
-                total_questions = sum(s.total_questions for s in scores)
-                avg_score = (total_scored / total_questions * 100) if total_questions > 0 else 0
+                total_percentage = 0
+                valid_scores = 0
+
+                # Calculate average percentage correctly
+                for score in scores:
+                    quiz = Quiz.query.get(score.quiz_id)
+                    if quiz:
+                        total_possible_marks = db.session.query(func.sum(Question.marks)).filter_by(quiz_id=quiz.id).scalar() or 0
+                        if total_possible_marks > 0:
+                            percentage = (score.total_scored / total_possible_marks * 100)
+                            total_percentage += percentage
+                            valid_scores += 1
+
+                avg_score = total_percentage / valid_scores if valid_scores > 0 else 0
 
                 # Find best score
                 best_percentage = 0
                 for score in scores:
-                    if score.total_questions > 0:
-                        percentage = (score.total_scored / score.total_questions * 100)
-                        if percentage > best_percentage:
-                            best_percentage = percentage
+                    quiz = Quiz.query.get(score.quiz_id)
+                    if quiz:
+                        total_possible_marks = db.session.query(func.sum(Question.marks)).filter_by(quiz_id=quiz.id).scalar() or 0
+                        if total_possible_marks > 0:
+                            percentage = (score.total_scored / total_possible_marks * 100)
+                            if percentage > best_percentage:
+                                best_percentage = percentage
 
                 # Find last quiz date
                 last_quiz = max(scores, key=lambda s: s.time_stamp_of_attempt)

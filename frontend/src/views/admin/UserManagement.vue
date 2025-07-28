@@ -2,11 +2,33 @@
   <div class="container-fluid">
     <div class="row">
       <div class="col-12">
+        <!-- Back Navigation -->
+        <nav aria-label="breadcrumb" class="mb-3">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+              <router-link to="/admin" class="text-decoration-none">
+                <i class="bi bi-house me-1"></i>
+                Admin Dashboard
+              </router-link>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+              <i class="bi bi-people me-1"></i>
+              User Management
+            </li>
+          </ol>
+        </nav>
+
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h2 class="mb-0">
-            <i class="bi bi-people me-2"></i>
-            User Management
-          </h2>
+          <div class="d-flex align-items-center">
+            <router-link to="/admin" class="btn btn-outline-secondary me-3">
+              <i class="bi bi-arrow-left me-2"></i>
+              Back to Dashboard
+            </router-link>
+            <h2 class="mb-0">
+              <i class="bi bi-people me-2"></i>
+              User Management
+            </h2>
+          </div>
         </div>
 
         <!-- Search and Filter -->

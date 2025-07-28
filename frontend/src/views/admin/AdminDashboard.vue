@@ -28,60 +28,70 @@
         </div>
 
         <!-- Quick Actions -->
-        <div class="row g-3 mb-4">
-          <div class="col-md-2">
-            <router-link
-              to="/admin/subjects"
-              class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3"
-            >
-              <i class="bi bi-journal-text fs-1 mb-2"></i>
-              <span>Subjects</span>
-            </router-link>
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="bi bi-lightning-charge me-2"></i>
+              Quick Actions
+            </h5>
           </div>
-          <div class="col-md-2">
-            <router-link
-              to="/admin/chapters"
-              class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3"
-            >
-              <i class="bi bi-book fs-1 mb-2"></i>
-              <span>Chapters</span>
-            </router-link>
-          </div>
-          <div class="col-md-2">
-            <router-link
-              to="/admin/quizzes"
-              class="btn btn-outline-info w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3"
-            >
-              <i class="bi bi-clipboard-check fs-1 mb-2"></i>
-              <span>Quizzes</span>
-            </router-link>
-          </div>
-          <div class="col-md-2">
-            <router-link
-              to="/admin/questions"
-              class="btn btn-outline-warning w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3"
-            >
-              <i class="bi bi-question-circle fs-1 mb-2"></i>
-              <span>Questions</span>
-            </router-link>
-          </div>
-          <div class="col-md-2">
-            <router-link
-              to="/admin/users"
-              class="btn btn-outline-danger w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3"
-            >
-              <i class="bi bi-people fs-1 mb-2"></i>
-              <span>Users</span>
-            </router-link>
-          </div>
-          <div class="col-md-2">
-            <button
-              class="btn btn-outline-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3"
-              @click="searchModal = true"
-            >
-              <i class="bi bi-search fs-1 mb-2"></i>
-              <span>Search</span>
-            </button>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-2">
+                <router-link
+                  to="/admin/subjects"
+                  class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3"
+                >
+                  <i class="bi bi-journal-text fs-1 mb-2"></i>
+                  <span>Subjects</span>
+                </router-link>
+              </div>
+              <div class="col-md-2">
+                <router-link
+                  to="/admin/chapters"
+                  class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3"
+                >
+                  <i class="bi bi-book fs-1 mb-2"></i>
+                  <span>Chapters</span>
+                </router-link>
+              </div>
+              <div class="col-md-2">
+                <router-link
+                  to="/admin/quizzes"
+                  class="btn btn-outline-info w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3"
+                >
+                  <i class="bi bi-clipboard-check fs-1 mb-2"></i>
+                  <span>Quizzes</span>
+                </router-link>
+              </div>
+              <div class="col-md-2">
+                <router-link
+                  to="/admin/questions"
+                  class="btn btn-outline-warning w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3"
+                >
+                  <i class="bi bi-question-circle fs-1 mb-2"></i>
+                  <span>Questions</span>
+                </router-link>
+              </div>
+              <div class="col-md-2">
+                <router-link
+                  to="/admin/users"
+                  class="btn btn-outline-danger w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3"
+                >
+                  <i class="bi bi-people fs-1 mb-2"></i>
+                  <span>Users</span>
+                </router-link>
+              </div>
+              <div class="col-md-2">
+                <button
+                  class="btn btn-outline-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3"
+                  @click="searchModal = true"
+                >
+                  <i class="bi bi-search fs-1 mb-2"></i>
+                  <span>Search</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

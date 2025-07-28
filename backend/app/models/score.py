@@ -15,6 +15,15 @@ class Score(BaseModel):
     # __table_args__ = (db.UniqueConstraint('quiz_id', 'user_id'),)
     
     def convert_to_json(self):
+        # Calculate percentage based on actual total possible marks
+        percentage = 0
+        if self.quiz and self.total_questions > 0:
+            from sqlalchemy import func
+            from .question import Question
+            total_possible_marks = db.session.query(func.sum(Question.marks)).filter_by(quiz_id=self.quiz_id).scalar() or 0
+            if total_possible_marks > 0:
+                percentage = round((self.total_scored / total_possible_marks * 100), 2)
+
         return {
             'id': self.id,
             'quiz_id': self.quiz_id,
@@ -24,7 +33,7 @@ class Score(BaseModel):
             'time_stamp_of_attempt': self.time_stamp_of_attempt.isoformat() if self.time_stamp_of_attempt else None,
             'total_scored': self.total_scored,
             'total_questions': self.total_questions,
-            'percentage': round((self.total_scored / self.total_questions * 100), 2) if self.total_questions > 0 else 0,
+            'percentage': percentage,
             'time_taken': self.time_taken,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
