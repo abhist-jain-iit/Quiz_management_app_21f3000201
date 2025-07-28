@@ -1,7 +1,7 @@
 from flask import request, current_app
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from ..models import db, User, Subject
+from ..models import db, User, Subject, Chapter, Quiz, Question, Score
 from ..auth import admin_required
 
 class SubjectApi(Resource):
@@ -147,35 +147,23 @@ class SubjectApi(Resource):
 
         try:
             # Count what will be deleted for confirmation message
-            total_chapters = len(subject.chapters)
+            total_chapters = subject.chapters.count()
             total_quizzes = 0
             total_questions = 0
             total_scores = 0
 
-            # Delete all associated data in proper order
+            # Count all nested items before deletion
             for chapter in subject.chapters:
+                chapter_quizzes = chapter.quizzes.count()
+                total_quizzes += chapter_quizzes
+
                 for quiz in chapter.quizzes:
-                    total_quizzes += 1
+                    total_questions += quiz.questions.count()
+                    total_scores += quiz.scores.count()
 
-                    # Delete all questions for this quiz
-                    questions = Question.query.filter_by(quiz_id=quiz.id).all()
-                    total_questions += len(questions)
-                    for question in questions:
-                        db.session.delete(question)
+            subject_name = subject.name
 
-                    # Delete all scores for this quiz
-                    scores = Score.query.filter_by(quiz_id=quiz.id).all()
-                    total_scores += len(scores)
-                    for score in scores:
-                        db.session.delete(score)
-
-                    # Delete the quiz
-                    db.session.delete(quiz)
-
-                # Delete the chapter
-                db.session.delete(chapter)
-
-            # Delete the subject
+            # Delete the subject - cascade should handle the rest
             db.session.delete(subject)
             db.session.commit()
 
@@ -187,10 +175,12 @@ class SubjectApi(Resource):
                 print(f"Cache clear error: {e}")
 
             return {
-                'message': f'Subject "{subject.name}" deleted successfully along with {total_chapters} chapters, {total_quizzes} quizzes, {total_questions} questions, and {total_scores} quiz attempts.'
+                'message': f'Subject "{subject_name}" deleted successfully along with {total_chapters} chapters, {total_quizzes} quizzes, {total_questions} questions, and {total_scores} quiz attempts.'
             }, 200
 
         except Exception as e:
             db.session.rollback()
             print(f"Error deleting subject: {e}")
-            return {'message': 'Error occurred while deleting subject.'}, 500
+            import traceback
+            traceback.print_exc()
+            return {'message': f'Error occurred while deleting subject: {str(e)}'}, 500

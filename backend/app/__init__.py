@@ -3,6 +3,9 @@ from flask import Flask, jsonify
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended.exceptions import NoAuthorizationError, InvalidHeaderError, WrongTokenError, RevokedTokenError, FreshTokenRequired
 from flask_cors import CORS
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+import sqlite3
 from .database import db
 from .models import *
 from .config import config_dict
@@ -11,6 +14,14 @@ from .api.routes import init_api
 from .default_data import create_default_data
 from flask_caching import Cache
 from .celery_worker import make_celery
+
+# Enable foreign key constraints for SQLite
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    if 'sqlite' in str(dbapi_connection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
 # Disable SQLAlchemy verbose logging
 logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
