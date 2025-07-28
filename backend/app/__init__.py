@@ -33,12 +33,20 @@ def create_app(config_name='development'):
          methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
          supports_credentials=True)
     
-    # Initialize cache
-    cache = Cache(app, config={
-        'CACHE_TYPE': 'RedisCache',
-        'CACHE_REDIS_URL': app.config.get('REDIS_URL', 'redis://localhost:6379/1'),
-        'CACHE_DEFAULT_TIMEOUT': app.config.get('CACHE_DEFAULT_TIMEOUT', 300)
-    })
+    # Initialize cache with fallback to SimpleCache if Redis is not available
+    try:
+        cache = Cache(app, config={
+            'CACHE_TYPE': 'RedisCache',
+            'CACHE_REDIS_URL': app.config.get('REDIS_URL', 'redis://localhost:6379/1'),
+            'CACHE_DEFAULT_TIMEOUT': app.config.get('CACHE_DEFAULT_TIMEOUT', 300)
+        })
+        print("✅ Redis cache initialized successfully")
+    except Exception as e:
+        print(f"⚠️  Redis not available, falling back to SimpleCache: {e}")
+        cache = Cache(app, config={
+            'CACHE_TYPE': 'SimpleCache',
+            'CACHE_DEFAULT_TIMEOUT': app.config.get('CACHE_DEFAULT_TIMEOUT', 300)
+        })
     app.cache = cache
 
     # Initialize Celery
