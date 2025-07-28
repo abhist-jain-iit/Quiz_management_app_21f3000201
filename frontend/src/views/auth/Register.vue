@@ -281,7 +281,6 @@ export default {
         // Redirect to dashboard
         router.push("/dashboard");
       } catch (error) {
-        console.error("Registration error:", error);
         errorMessage.value =
           error.response?.data?.message ||
           "Registration failed. Please try again.";

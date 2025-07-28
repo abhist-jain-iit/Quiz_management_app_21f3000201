@@ -368,7 +368,7 @@ export default {
           initCharts();
         }, 100);
       } catch (error) {
-        console.error("Error loading admin dashboard:", error);
+        // Handle error silently in production
       } finally {
         loading.value = false;
       }

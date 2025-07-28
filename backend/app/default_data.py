@@ -205,10 +205,11 @@ def create_default_data():
         
         logger.info("Default data initialization complete!")
         logger.info(f"Summary: {user_count} users, {subject_count} subjects, {chapter_count} chapters, {quiz_count} quizzes, {question_count} questions, {score_count} attempts")
-        
-        print("LOGIN CREDENTIALS:")
-        print("Admin: admin / Admin@123")
-        print("Student: dummy / dummy123")
+
+        # Log default credentials for development
+        logger.info("Default login credentials created:")
+        logger.info("Admin: admin / Admin@123")
+        logger.info("Student: dummy / dummy123")
         
     except Exception as e:
         logger.error(f"Error creating default data: {e}")

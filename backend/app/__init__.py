@@ -1,18 +1,18 @@
 import logging
 from flask import Flask, jsonify
 from flask_jwt_extended import JWTManager
-from flask_jwt_extended.exceptions import NoAuthorizationError, InvalidHeaderError, WrongTokenError, RevokedTokenError, FreshTokenRequired
+from flask_jwt_extended.exceptions import NoAuthorizationError, InvalidHeaderError, WrongTokenError, RevokedTokenError
 from flask_cors import CORS
+from flask_caching import Cache
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
-import sqlite3
+
 from .database import db
 from .models import *
 from .config import config_dict
 from .auth import init_admin_user
 from .api.routes import init_api
 from .default_data import create_default_data
-from flask_caching import Cache
 from .celery_worker import make_celery
 
 # Enable foreign key constraints for SQLite
@@ -23,16 +23,9 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
 
-# Disable SQLAlchemy verbose logging
-logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
-
 def create_app(config_name='development'):
     app = Flask(__name__)
     app.config.from_object(config_dict[config_name])
-
-    # Disable SQLAlchemy logging
-    app.config['SQLALCHEMY_ECHO'] = False
-    logging.getLogger('sqlalchemy').setLevel(logging.ERROR)
 
     # Initialize extensions
     db.init_app(app)
@@ -44,21 +37,16 @@ def create_app(config_name='development'):
          allow_headers=['Content-Type', 'Authorization'],
          methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
          supports_credentials=True)
-    
-    # Initialize cache with fallback to SimpleCache if Redis is not available
+
+    # Initialize cache
     try:
         cache = Cache(app, config={
             'CACHE_TYPE': 'RedisCache',
             'CACHE_REDIS_URL': app.config.get('REDIS_URL', 'redis://localhost:6379/1'),
-            'CACHE_DEFAULT_TIMEOUT': app.config.get('CACHE_DEFAULT_TIMEOUT', 300)
+            'CACHE_DEFAULT_TIMEOUT': 300
         })
-        print("✅ Redis cache initialized successfully")
-    except Exception as e:
-        print(f"⚠️  Redis not available, falling back to SimpleCache: {e}")
-        cache = Cache(app, config={
-            'CACHE_TYPE': 'SimpleCache',
-            'CACHE_DEFAULT_TIMEOUT': app.config.get('CACHE_DEFAULT_TIMEOUT', 300)
-        })
+    except:
+        cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
     app.cache = cache
 
     # Initialize Celery
@@ -124,8 +112,8 @@ def create_app(config_name='development'):
         db.create_all()
         init_admin_user()
 
-        # Create default data if enabled
+        # Create default data for development
         if app.config.get('CREATE_DEFAULT_DATA', True):
             create_default_data()
-    
+
     return app
