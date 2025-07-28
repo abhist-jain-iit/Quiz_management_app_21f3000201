@@ -13,7 +13,7 @@ class Quiz(BaseModel):
     
     # Relationships
     questions = db.relationship('Question', backref='quiz', lazy='dynamic', cascade='all, delete-orphan')
-    scores = db.relationship('Score', backref='quiz', lazy='dynamic')
+    scores = db.relationship('Score', backref='quiz', lazy='dynamic', cascade='all, delete-orphan')
     
     def convert_to_json(self):
         return {

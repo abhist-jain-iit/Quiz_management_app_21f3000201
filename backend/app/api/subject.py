@@ -140,23 +140,57 @@ class SubjectApi(Resource):
     @jwt_required()
     @admin_required()
     def delete(self, subject_id):
-        """Delete subject (Admin only)"""
+        """Delete subject and all associated data (Admin only)"""
         subject = Subject.query.get(subject_id)
         if not subject:
             return {'message': 'Subject does not exist.'}, 404
-        
-        # Check if subject has chapters
-        if subject.chapters.count() > 0:
-            return {'message': 'Cannot delete subject with existing chapters.'}, 400
-        
-        db.session.delete(subject)
-        db.session.commit()
 
-        # Invalidate caches
         try:
-            cache = current_app.cache
-            cache.clear()  # Clear all cache to be safe
-        except Exception as e:
-            print(f"Cache clear error: {e}")
+            # Count what will be deleted for confirmation message
+            total_chapters = len(subject.chapters)
+            total_quizzes = 0
+            total_questions = 0
+            total_scores = 0
 
-        return {'message': 'Subject deleted successfully.'}, 200
+            # Delete all associated data in proper order
+            for chapter in subject.chapters:
+                for quiz in chapter.quizzes:
+                    total_quizzes += 1
+
+                    # Delete all questions for this quiz
+                    questions = Question.query.filter_by(quiz_id=quiz.id).all()
+                    total_questions += len(questions)
+                    for question in questions:
+                        db.session.delete(question)
+
+                    # Delete all scores for this quiz
+                    scores = Score.query.filter_by(quiz_id=quiz.id).all()
+                    total_scores += len(scores)
+                    for score in scores:
+                        db.session.delete(score)
+
+                    # Delete the quiz
+                    db.session.delete(quiz)
+
+                # Delete the chapter
+                db.session.delete(chapter)
+
+            # Delete the subject
+            db.session.delete(subject)
+            db.session.commit()
+
+            # Invalidate caches
+            try:
+                cache = current_app.cache
+                cache.clear()
+            except Exception as e:
+                print(f"Cache clear error: {e}")
+
+            return {
+                'message': f'Subject "{subject.name}" deleted successfully along with {total_chapters} chapters, {total_quizzes} quizzes, {total_questions} questions, and {total_scores} quiz attempts.'
+            }, 200
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error deleting subject: {e}")
+            return {'message': 'Error occurred while deleting subject.'}, 500

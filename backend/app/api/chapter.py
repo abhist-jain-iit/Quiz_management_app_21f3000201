@@ -1,7 +1,7 @@
 from flask import request, current_app
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from ..models import db, User, Subject, Chapter
+from ..models import db, User, Subject, Chapter, Quiz, Question, Score
 from ..auth import admin_required
 
 class ChapterApi(Resource):
@@ -120,18 +120,50 @@ class ChapterApi(Resource):
     @jwt_required()
     @admin_required()
     def delete(self, chapter_id):
-        """Delete chapter (Admin only)"""
+        """Delete chapter and all associated data (Admin only)"""
         chapter = Chapter.query.get(chapter_id)
         if not chapter:
             return {'message': 'Chapter does not exist.'}, 404
-        
-        # Check if chapter has quizzes
-        if chapter.quizzes.count() > 0:
-            return {'message': 'Cannot delete chapter with existing quizzes.'}, 400
-        
-        db.session.delete(chapter)
-        db.session.commit()
-        
-        cache = current_app.cache
-        cache.delete('all_chapters')
-        return {'message': 'Chapter deleted successfully.'}, 200 
+
+        try:
+            # Count what will be deleted for confirmation message
+            total_quizzes = len(chapter.quizzes)
+            total_questions = 0
+            total_scores = 0
+
+            # Delete all associated data in proper order
+            for quiz in chapter.quizzes:
+                # Delete all questions for this quiz
+                questions = Question.query.filter_by(quiz_id=quiz.id).all()
+                total_questions += len(questions)
+                for question in questions:
+                    db.session.delete(question)
+
+                # Delete all scores for this quiz
+                scores = Score.query.filter_by(quiz_id=quiz.id).all()
+                total_scores += len(scores)
+                for score in scores:
+                    db.session.delete(score)
+
+                # Delete the quiz
+                db.session.delete(quiz)
+
+            # Delete the chapter
+            db.session.delete(chapter)
+            db.session.commit()
+
+            # Invalidate caches
+            try:
+                cache = current_app.cache
+                cache.clear()
+            except Exception as e:
+                print(f"Cache clear error: {e}")
+
+            return {
+                'message': f'Chapter "{chapter.name}" deleted successfully along with {total_quizzes} quizzes, {total_questions} questions, and {total_scores} quiz attempts.'
+            }, 200
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error deleting chapter: {e}")
+            return {'message': 'Error occurred while deleting chapter.'}, 500

@@ -51,27 +51,50 @@ class DashboardApi(Resource):
         # Performance statistics
         if total_attempts > 0:
             avg_score = db.session.query(func.avg(Score.total_scored)).scalar()
-            avg_percentage = db.session.query(func.avg(
-                func.cast(Score.total_scored, db.Float) / func.cast(Score.total_questions, db.Float) * 100
-            )).scalar()
+            # Calculate average percentage correctly
+            scores = Score.query.all()
+            total_percentage = 0
+            valid_scores = 0
+
+            for score in scores:
+                if score.total_questions and score.total_questions > 0:
+                    percentage = (score.total_scored / (score.total_questions * 25)) * 100  # Assuming 25 marks per question
+                    total_percentage += percentage
+                    valid_scores += 1
+
+            avg_percentage = total_percentage / valid_scores if valid_scores > 0 else 0
         else:
             avg_score = 0
             avg_percentage = 0
         
         # Top performing quizzes
-        top_quizzes = db.session.query(
-            Quiz.title,
-            func.count(Score.id).label('attempts'),
-            func.avg(func.cast(Score.total_scored, db.Float) / func.cast(Score.total_questions, db.Float) * 100).label('avg_percentage')
-        ).join(Score).group_by(Quiz.id).order_by(desc('attempts')).limit(5).all()
-        
         top_quizzes_data = []
-        for quiz in top_quizzes:
-            top_quizzes_data.append({
-                'title': quiz.title,
-                'attempts': quiz.attempts,
-                'avg_percentage': round(quiz.avg_percentage, 2) if quiz.avg_percentage else 0
-            })
+        quizzes_with_scores = db.session.query(Quiz).join(Score).group_by(Quiz.id).all()
+
+        for quiz in quizzes_with_scores:
+            quiz_scores = Score.query.filter_by(quiz_id=quiz.id).all()
+            attempts = len(quiz_scores)
+
+            if attempts > 0:
+                total_percentage = 0
+                for score in quiz_scores:
+                    if score.total_questions and score.total_questions > 0:
+                        # Calculate percentage based on total possible marks
+                        total_possible_marks = score.total_questions * 25  # 25 marks per question
+                        percentage = (score.total_scored / total_possible_marks) * 100
+                        total_percentage += percentage
+
+                avg_percentage = total_percentage / attempts
+
+                top_quizzes_data.append({
+                    'title': quiz.title,
+                    'attempts': attempts,
+                    'avg_percentage': round(avg_percentage, 2)
+                })
+
+        # Sort by attempts and limit to top 5
+        top_quizzes_data.sort(key=lambda x: x['attempts'], reverse=True)
+        top_quizzes_data = top_quizzes_data[:5]
         
         # Monthly activity (last 6 months)
         monthly_data = []

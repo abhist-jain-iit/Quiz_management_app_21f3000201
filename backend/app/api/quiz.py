@@ -154,26 +154,43 @@ class QuizApi(Resource):
     @jwt_required()
     @admin_required()
     def delete(self, quiz_id):
-        """Delete quiz (Admin only)"""
+        """Delete quiz and all associated data (Admin only)"""
         cache = current_app.cache
         quiz = Quiz.query.get(quiz_id)
         if not quiz:
             return {'message': 'Quiz does not exist.'}, 404
-        
-        # Check if quiz has questions
-        if quiz.questions.count() > 0:
-            return {'message': 'Cannot delete quiz with existing questions.'}, 400
-        
-        # Check if quiz has scores
-        if quiz.scores.count() > 0:
-            return {'message': 'Cannot delete quiz with existing scores.'}, 400
-        
-        db.session.delete(quiz)
-        db.session.commit()
 
-        # Cache invalidation removed for simplicity
+        try:
+            # Count what will be deleted for confirmation message
+            total_questions = len(quiz.questions)
+            total_scores = len(quiz.scores)
 
-        return {'message': 'Quiz deleted successfully.'}, 200
+            # Delete all questions for this quiz
+            for question in quiz.questions:
+                db.session.delete(question)
+
+            # Delete all scores for this quiz
+            for score in quiz.scores:
+                db.session.delete(score)
+
+            # Delete the quiz
+            db.session.delete(quiz)
+            db.session.commit()
+
+            # Invalidate caches
+            try:
+                cache.clear()
+            except Exception as e:
+                print(f"Cache clear error: {e}")
+
+            return {
+                'message': f'Quiz "{quiz.title}" deleted successfully along with {total_questions} questions and {total_scores} quiz attempts.'
+            }, 200
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error deleting quiz: {e}")
+            return {'message': 'Error occurred while deleting quiz.'}, 500
 
     def _invalidate_quiz_caches(self, cache):
         """Invalidate all quiz-related caches"""

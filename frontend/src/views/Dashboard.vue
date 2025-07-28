@@ -33,7 +33,7 @@
             <div class="card bg-primary text-white">
               <div class="card-body text-center">
                 <i class="bi bi-journal-text fs-1 mb-2"></i>
-                <h4>{{ dashboardData.total_quizzes_attempted || 0 }}</h4>
+                <h4>{{ dashboardData.statistics?.total_attempts || 0 }}</h4>
                 <p class="mb-0">Quizzes Attempted</p>
               </div>
             </div>
@@ -43,7 +43,7 @@
             <div class="card bg-success text-white">
               <div class="card-body text-center">
                 <i class="bi bi-trophy fs-1 mb-2"></i>
-                <h4>{{ dashboardData.average_score || 0 }}%</h4>
+                <h4>{{ dashboardData.statistics?.avg_percentage || 0 }}%</h4>
                 <p class="mb-0">Average Score</p>
               </div>
             </div>
@@ -53,7 +53,7 @@
             <div class="card bg-info text-white">
               <div class="card-body text-center">
                 <i class="bi bi-clock fs-1 mb-2"></i>
-                <h4>{{ dashboardData.total_subjects || 0 }}</h4>
+                <h4>{{ dashboardData.statistics?.total_subjects || 0 }}</h4>
                 <p class="mb-0">Subjects Available</p>
               </div>
             </div>
@@ -63,7 +63,7 @@
             <div class="card bg-warning text-white">
               <div class="card-body text-center">
                 <i class="bi bi-graph-up fs-1 mb-2"></i>
-                <h4>{{ dashboardData.total_quizzes || 0 }}</h4>
+                <h4>{{ dashboardData.statistics?.total_quizzes || 0 }}</h4>
                 <p class="mb-0">Total Quizzes</p>
               </div>
             </div>
@@ -75,7 +75,7 @@
           <div class="col-md-6">
             <div class="card">
               <div class="card-header">
-                <h5 class="mb-0">Performance Trend</h5>
+                <h5 class="mb-0">Monthly Activity</h5>
               </div>
               <div class="card-body">
                 <canvas id="performanceChart" width="400" height="200"></canvas>
@@ -86,7 +86,7 @@
           <div class="col-md-6">
             <div class="card">
               <div class="card-header">
-                <h5 class="mb-0">Subject-wise Performance</h5>
+                <h5 class="mb-0">Top Quizzes Performance</h5>
               </div>
               <div class="card-body">
                 <canvas id="subjectChart" width="400" height="200"></canvas>
@@ -288,20 +288,20 @@ export default {
     };
 
     const initCharts = () => {
-      // Performance Trend Chart
+      // Monthly Activity Chart
       const performanceCtx = document.getElementById("performanceChart");
-      if (performanceCtx && dashboardData.value?.performance_trend) {
+      if (performanceCtx && dashboardData.value?.charts?.monthly_activity) {
         new Chart(performanceCtx, {
           type: "line",
           data: {
-            labels: dashboardData.value.performance_trend.map(
-              (item) => item.date
+            labels: dashboardData.value.charts.monthly_activity.map(
+              (item) => item.month
             ),
             datasets: [
               {
-                label: "Score %",
-                data: dashboardData.value.performance_trend.map(
-                  (item) => item.score
+                label: "Quiz Attempts",
+                data: dashboardData.value.charts.monthly_activity.map(
+                  (item) => item.attempts
                 ),
                 borderColor: "rgb(75, 192, 192)",
                 backgroundColor: "rgba(75, 192, 192, 0.2)",
@@ -314,26 +314,25 @@ export default {
             scales: {
               y: {
                 beginAtZero: true,
-                max: 100,
               },
             },
           },
         });
       }
 
-      // Subject-wise Performance Chart
+      // Top Quizzes Chart
       const subjectCtx = document.getElementById("subjectChart");
-      if (subjectCtx && dashboardData.value?.subject_performance) {
+      if (subjectCtx && dashboardData.value?.charts?.top_quizzes) {
         new Chart(subjectCtx, {
           type: "doughnut",
           data: {
-            labels: dashboardData.value.subject_performance.map(
-              (item) => item.subject
+            labels: dashboardData.value.charts.top_quizzes.map(
+              (item) => item.title
             ),
             datasets: [
               {
-                data: dashboardData.value.subject_performance.map(
-                  (item) => item.average_score
+                data: dashboardData.value.charts.top_quizzes.map(
+                  (item) => item.avg_percentage
                 ),
                 backgroundColor: [
                   "#FF6384",
