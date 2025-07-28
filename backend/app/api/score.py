@@ -1,7 +1,7 @@
 from flask import request
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from datetime import datetime, time
+from datetime import datetime
 from ..models import db, User, Quiz, Question, Score
 from ..auth import user_required
 
@@ -83,15 +83,17 @@ class ScoreApi(Resource):
             if user_answer and user_answer == question.correct_option:
                 total_scored += question.marks
         
-        # Parse time taken
+        # Validate time taken format
+        time_taken = data.get('time_taken').strip()
         try:
-            time_parts = data.get('time_taken').split(':')
+            time_parts = time_taken.split(':')
             if len(time_parts) != 2:
                 return {'message': 'Invalid time format. Use HH:MM'}, 400
             hours, minutes = int(time_parts[0]), int(time_parts[1])
             if hours < 0 or hours > 23 or minutes < 0 or minutes > 59:
                 return {'message': 'Invalid time values'}, 400
-            time_taken = time(hours, minutes)
+            # Store as string in HH:MM format
+            time_taken = f"{hours:02d}:{minutes:02d}"
         except (ValueError, IndexError):
             return {'message': 'Invalid time format. Use HH:MM'}, 400
         

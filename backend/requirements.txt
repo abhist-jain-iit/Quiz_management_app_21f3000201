@@ -5,3 +5,10 @@ python-dotenv
 flask_jwt_extended
 werkzeug
 requests
+redis
+celery
+flask-mail
+pandas
+openpyxl
+apscheduler
+flask-caching

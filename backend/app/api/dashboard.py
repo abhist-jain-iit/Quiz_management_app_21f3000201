@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, current_app
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
@@ -17,11 +17,14 @@ class DashboardApi(Resource):
         """Get comprehensive dashboard data"""
         current_user_id = get_jwt_identity()
         user = User.query.get(current_user_id)
-        
+
+        # Temporarily disable caching to avoid issues
         if user.is_admin():
-            return self._get_admin_dashboard()
+            result = self._get_admin_dashboard()
         else:
-            return self._get_user_dashboard(user)
+            result = self._get_user_dashboard(user)
+
+        return result
     
     def _get_admin_dashboard(self):
         """Admin dashboard with comprehensive statistics"""

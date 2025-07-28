@@ -8,6 +8,7 @@ from .score import ScoreApi, QuizAttemptApi
 from .user import UserApi
 from .search import SearchApi
 from .dashboard import DashboardApi
+from .export import export_bp
 
 def init_api(app):
     """Initialize API routes"""
@@ -44,5 +45,7 @@ def init_api(app):
     
     # Dashboard route
     api.add_resource(DashboardApi, '/dashboard')
+
+    app.register_blueprint(export_bp)
     
     return api 

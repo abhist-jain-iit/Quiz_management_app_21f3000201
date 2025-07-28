@@ -6,6 +6,8 @@ from .models import *
 from .config import config_dict
 from .auth import init_admin_user
 from .api.routes import init_api
+from flask_caching import Cache
+from .celery_worker import make_celery
 
 def create_app(config_name='development'):
     app = Flask(__name__)
@@ -14,6 +16,17 @@ def create_app(config_name='development'):
     # Initialize extensions
     db.init_app(app)
     jwt = JWTManager(app)
+    
+    # Initialize cache
+    cache = Cache(app, config={
+        'CACHE_TYPE': 'RedisCache',
+        'CACHE_REDIS_URL': app.config.get('REDIS_URL', 'redis://localhost:6379/1'),
+        'CACHE_DEFAULT_TIMEOUT': app.config.get('CACHE_DEFAULT_TIMEOUT', 300)
+    })
+    app.cache = cache
+
+    # Initialize Celery
+    app.celery = make_celery(app)
     
     # JWT Error Handlers
     @jwt.expired_token_loader

@@ -9,7 +9,7 @@ class Score(BaseModel):
     time_stamp_of_attempt = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     total_scored = db.Column(db.Integer, nullable=False, default=0)
     total_questions = db.Column(db.Integer, nullable=False)
-    time_taken = db.Column(db.Time)  # Actual time taken to complete
+    time_taken = db.Column(db.String(5))  # Actual time taken to complete in HH:MM format
     
     # Unique constraint to prevent multiple attempts (if needed)
     # __table_args__ = (db.UniqueConstraint('quiz_id', 'user_id'),)
@@ -25,7 +25,7 @@ class Score(BaseModel):
             'total_scored': self.total_scored,
             'total_questions': self.total_questions,
             'percentage': round((self.total_scored / self.total_questions * 100), 2) if self.total_questions > 0 else 0,
-            'time_taken': str(self.time_taken) if self.time_taken else None,
+            'time_taken': self.time_taken,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

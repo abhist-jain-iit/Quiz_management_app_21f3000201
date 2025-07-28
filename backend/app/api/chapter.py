@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, current_app
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..models import db, User, Subject, Chapter
@@ -7,6 +7,7 @@ from ..auth import admin_required
 class ChapterApi(Resource):
     def get(self, chapter_id=None):
         """Get all chapters or specific chapter"""
+        cache = current_app.cache
         if chapter_id:
             chapter = Chapter.query.get(chapter_id)
             if chapter:
@@ -69,6 +70,8 @@ class ChapterApi(Resource):
         db.session.add(new_chapter)
         db.session.commit()
         
+        cache = current_app.cache
+        cache.delete('all_chapters')
         return new_chapter.convert_to_json(), 201
 
     @jwt_required()
@@ -110,6 +113,8 @@ class ChapterApi(Resource):
         
         db.session.commit()
         
+        cache = current_app.cache
+        cache.delete('all_chapters')
         return chapter.convert_to_json(), 200
 
     @jwt_required()
@@ -127,4 +132,6 @@ class ChapterApi(Resource):
         db.session.delete(chapter)
         db.session.commit()
         
+        cache = current_app.cache
+        cache.delete('all_chapters')
         return {'message': 'Chapter deleted successfully.'}, 200 

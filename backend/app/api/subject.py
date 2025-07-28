@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, current_app
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..models import db, User, Subject
@@ -7,22 +7,41 @@ from ..auth import admin_required
 class SubjectApi(Resource):
     def get(self, subject_id=None):
         """Get all subjects or specific subject"""
+        cache = current_app.cache
+
         if subject_id:
+            # Cache individual subject for 15 minutes
+            cache_key = f"subject_{subject_id}"
+            cached_subject = cache.get(cache_key)
+            if cached_subject:
+                return cached_subject, 200
+
             subject = Subject.query.get(subject_id)
             if subject:
-                return subject.convert_to_json(), 200
+                subject_data = subject.convert_to_json()
+                cache.set(cache_key, subject_data, timeout=900)
+                return subject_data, 200
             return {'message': 'Subject does not exist.'}, 404
 
         search_query = request.args.get('search', '').strip()
-        
+        cache_key = f"subjects_list_{search_query}"
+
+        # Try to get from cache first
+        cached_list = cache.get(cache_key)
+        if cached_list:
+            return cached_list, 200
+
         if search_query:
             subjects = Subject.query.filter(Subject.name.ilike(f"%{search_query}%")).all()
         else:
             subjects = Subject.query.all()
-        
+
         subject_list = []
         for subject in subjects:
             subject_list.append(subject.convert_to_json())
+
+        # Cache subject list for 10 minutes
+        cache.set(cache_key, subject_list, timeout=600)
         return subject_list, 200
 
     @jwt_required()
@@ -52,7 +71,14 @@ class SubjectApi(Resource):
         
         db.session.add(new_subject)
         db.session.commit()
-        
+
+        # Invalidate caches
+        try:
+            cache = current_app.cache
+            cache.clear()  # Simple approach - clear all cache
+        except Exception as e:
+            print(f"Cache error: {e}")
+
         return new_subject.convert_to_json(), 201
 
     @jwt_required()
@@ -84,6 +110,8 @@ class SubjectApi(Resource):
         
         db.session.commit()
         
+        cache = current_app.cache
+        cache.delete('all_subjects')
         return subject.convert_to_json(), 200
 
     @jwt_required()
@@ -101,4 +129,6 @@ class SubjectApi(Resource):
         db.session.delete(subject)
         db.session.commit()
         
+        cache = current_app.cache
+        cache.delete('all_subjects')
         return {'message': 'Subject deleted successfully.'}, 200 

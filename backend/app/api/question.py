@@ -37,7 +37,7 @@ class QuestionApi(Resource):
         """Create new question (Admin only)"""
         data = request.get_json()
         
-        required_fields = ['question_statement', 'option1', 'option2', 'option3', 'option4', 'correct_option', 'quiz_id']
+        required_fields = ['question_statement', 'option1', 'option2', 'correct_option', 'quiz_id']
         for field in required_fields:
             if not data.get(field):
                 return {'message': f'Bad request! {field} is required.'}, 400
@@ -54,6 +54,16 @@ class QuestionApi(Resource):
         correct_option = data.get('correct_option')
         if correct_option not in [1, 2, 3, 4]:
             return {'message': 'Correct option must be 1, 2, 3, or 4'}, 400
+
+        # Count available options
+        available_options = 2  # option1 and option2 are required
+        if data.get('option3'):
+            available_options += 1
+        if data.get('option4'):
+            available_options += 1
+
+        if correct_option > available_options:
+            return {'message': f'Correct option {correct_option} is not available. Only {available_options} options provided.'}, 400
         
         # Check if question already exists in this quiz
         existing_question = Question.query.filter_by(
@@ -68,8 +78,8 @@ class QuestionApi(Resource):
             question_statement=data.get('question_statement').strip(),
             option1=data.get('option1').strip(),
             option2=data.get('option2').strip(),
-            option3=data.get('option3').strip(),
-            option4=data.get('option4').strip(),
+            option3=data.get('option3', '').strip() if data.get('option3') else None,
+            option4=data.get('option4', '').strip() if data.get('option4') else None,
             correct_option=correct_option,
             quiz_id=data.get('quiz_id'),
             marks=data.get('marks', 1)
