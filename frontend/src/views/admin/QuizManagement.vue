@@ -269,14 +269,16 @@
 
                 <div class="col-md-6 mb-3">
                   <label for="timeDuration" class="form-label"
-                    >Duration (HH:MM) *</label
+                    >Duration (HH:MM:SS) *</label
                   >
                   <input
-                    type="time"
+                    type="text"
                     class="form-control"
                     id="timeDuration"
                     v-model="quizForm.time_duration"
                     :class="{ 'is-invalid': errors.time_duration }"
+                    placeholder="HH:MM:SS (e.g., 01:30:00)"
+                    pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"
                     required
                   />
                   <div class="invalid-feedback" v-if="errors.time_duration">
@@ -502,6 +504,13 @@ export default {
 
       if (!quizForm.time_duration) {
         errors.time_duration = "Duration is required";
+        return false;
+      }
+
+      // Validate HH:MM:SS format
+      const timePattern = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/;
+      if (!timePattern.test(quizForm.time_duration)) {
+        errors.time_duration = "Duration must be in HH:MM:SS format";
         return false;
       }
 

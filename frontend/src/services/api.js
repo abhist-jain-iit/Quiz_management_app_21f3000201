@@ -8,7 +8,8 @@ class ApiService {
       baseURL: API_BASE_URL,
       headers: {
         'Content-Type': 'application/json'
-      }
+      },
+      timeout: 10000 // 10 second timeout
     })
 
     // Request interceptor
@@ -18,51 +19,108 @@ class ApiService {
         if (token) {
           config.headers.Authorization = `Bearer ${token}`
         }
+        console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`)
         return config
       },
-      (error) => Promise.reject(error)
+      (error) => {
+        console.error('Request interceptor error:', error)
+        return Promise.reject(error)
+      }
     )
 
     // Response interceptor
     this.client.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        console.log(`API Response: ${response.status} ${response.config.url}`)
+        return response
+      },
       (error) => {
+        console.error('API Error:', error.response?.status, error.response?.data || error.message)
+
         if (error.response?.status === 401) {
+          // Clear auth data and redirect to login
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
           localStorage.removeItem('user')
-          window.location.href = '/login'
+
+          // Update auth state
+          if (window.updateAuthState) {
+            window.updateAuthState()
+          }
+
+          // Only redirect if not already on login page
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login'
+          }
         }
+
         return Promise.reject(error)
       }
     )
   }
 
+  // Helper method to handle API errors
+  handleError(error, defaultMessage = 'An error occurred') {
+    if (error.response?.data?.message) {
+      return error.response.data.message
+    } else if (error.message) {
+      return error.message
+    } else {
+      return defaultMessage
+    }
+  }
+
   // Authentication
   async login(credentials) {
-    const response = await this.client.post('/auth/login', credentials)
-    return response.data
+    try {
+      const response = await this.client.post('/auth/login', credentials)
+      return response.data
+    } catch (error) {
+      console.error('Login error:', error)
+      throw error
+    }
   }
 
   async register(userData) {
-    const response = await this.client.post('/auth/register', userData)
-    return response.data
+    try {
+      const response = await this.client.post('/auth/register', userData)
+      return response.data
+    } catch (error) {
+      console.error('Registration error:', error)
+      throw error
+    }
   }
 
   async logout() {
-    const response = await this.client.post('/auth/logout')
-    return response.data
+    try {
+      const response = await this.client.post('/auth/logout')
+      return response.data
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Don't throw error for logout - just log it
+      return null
+    }
   }
 
   async getProfile() {
-    const response = await this.client.get('/auth/profile')
-    return response.data
+    try {
+      const response = await this.client.get('/auth/profile')
+      return response.data
+    } catch (error) {
+      console.error('Get profile error:', error)
+      throw error
+    }
   }
 
   // Dashboard
   async getDashboard() {
-    const response = await this.client.get('/dashboard')
-    return response.data
+    try {
+      const response = await this.client.get('/dashboard')
+      return response.data
+    } catch (error) {
+      console.error('Dashboard error:', error)
+      throw error
+    }
   }
 
   // Subjects

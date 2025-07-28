@@ -278,6 +278,11 @@ export default {
         localStorage.setItem("refresh_token", response.refresh_token);
         localStorage.setItem("user", JSON.stringify(response.user));
 
+        // Trigger auth state update
+        if (window.updateAuthState) {
+          window.updateAuthState();
+        }
+
         // Redirect to dashboard
         router.push("/dashboard");
       } catch (error) {

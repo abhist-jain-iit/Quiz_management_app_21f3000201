@@ -27,6 +27,15 @@
           </div>
         </div>
 
+        <!-- Error Alert -->
+        <ErrorAlert
+          v-if="error"
+          :message="error"
+          title="Error"
+          variant="danger"
+          @dismiss="error = ''"
+        />
+
         <!-- Stats Cards -->
         <div class="row g-4 mb-4" v-if="dashboardData">
           <div class="col-md-3">
@@ -121,11 +130,11 @@
                 </div>
               </div>
               <div class="card-body">
-                <div v-if="loading" class="text-center py-4">
-                  <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                  </div>
-                </div>
+                <LoadingSpinner
+                  v-if="loading"
+                  message="Loading quizzes..."
+                  size="normal"
+                />
 
                 <div
                   v-else-if="filteredQuizzes.length === 0"
@@ -155,6 +164,24 @@
                           <i class="bi bi-calendar me-1"></i
                           >{{ formatDate(quiz.date_of_quiz) }}
                         </p>
+
+                        <!-- Attempts Information -->
+                        <div class="mb-2">
+                          <small class="text-info">
+                            <i class="bi bi-arrow-repeat me-1"></i>
+                            Attempts: {{ quiz.user_attempts || 0 }}/5
+                            <span
+                              v-if="(quiz.attempts_left || 5) > 0"
+                              class="text-success"
+                            >
+                              ({{ quiz.attempts_left || 5 }} left)
+                            </span>
+                            <span v-else class="text-danger">
+                              (No attempts left)
+                            </span>
+                          </small>
+                        </div>
+
                         <div
                           class="d-flex justify-content-between align-items-center"
                         >
@@ -164,11 +191,20 @@
                           <router-link
                             :to="`/quiz/${quiz.id}/attempt`"
                             class="btn btn-primary btn-sm"
-                            v-if="quiz.is_active"
+                            v-if="
+                              quiz.is_active &&
+                              (quiz.attempts_left === undefined ||
+                                quiz.attempts_left > 0)
+                            "
                           >
                             <i class="bi bi-play-fill me-1"></i>
                             Start Quiz
                           </router-link>
+                          <span
+                            v-else-if="quiz.attempts_left === 0"
+                            class="badge bg-danger"
+                            >Max Attempts Reached</span
+                          >
                           <span v-else class="badge bg-secondary"
                             >Inactive</span
                           >
@@ -216,11 +252,9 @@
                         {{ score.percentage }}%
                       </span>
                       <br />
-                      <small class="text-muted"
-                        >{{ score.total_scored }}/{{
-                          score.total_questions
-                        }}</small
-                      >
+                      <small class="text-muted">{{
+                        getCorrectAnswersDisplay(score)
+                      }}</small>
                     </div>
                   </div>
                 </div>
@@ -234,64 +268,116 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted, computed } from "vue";
+import { ref, reactive, onMounted, onUnmounted, computed } from "vue";
 import api from "../services/api";
 import Chart from "chart.js/auto";
+import LoadingSpinner from "../components/LoadingSpinner.vue";
+import ErrorAlert from "../components/ErrorAlert.vue";
 
 export default {
   name: "Dashboard",
+  components: {
+    LoadingSpinner,
+    ErrorAlert,
+  },
   setup() {
     const loading = ref(false);
     const exporting = ref(false);
+    const error = ref("");
     const dashboardData = ref(null);
     const quizzes = ref([]);
     const subjects = ref([]);
     const recentScores = ref([]);
     const selectedSubject = ref("");
 
+    // Chart instances to track for proper cleanup
+    let performanceChart = null;
+    let subjectChart = null;
+
     const filteredQuizzes = computed(() => {
       if (!selectedSubject.value) return quizzes.value;
       return quizzes.value.filter(
-        (quiz) => quiz.chapter?.subject_id === parseInt(selectedSubject.value)
+        (quiz) => quiz.subject_id === parseInt(selectedSubject.value)
       );
     });
 
     const loadDashboard = async () => {
       loading.value = true;
+      error.value = "";
+
       try {
+        console.log("Loading dashboard data...");
+
+        // Add timestamp for cache busting on refresh
+        const timestamp = Date.now();
+
+        // Load data in parallel for faster loading
         const [
           dashResponse,
           quizzesResponse,
           subjectsResponse,
           scoresResponse,
         ] = await Promise.all([
-          api.getDashboard(),
-          api.getQuizzes({ is_active: true }),
-          api.getSubjects(),
-          api.getScores(),
+          api.getDashboard({ _t: timestamp }),
+          api.getQuizzes({ is_active: true, _t: timestamp }),
+          api.getSubjects({ _t: timestamp }),
+          api.getScores({ _t: timestamp }),
         ]);
 
+        console.log("All data loaded");
         dashboardData.value = dashResponse;
-        quizzes.value = quizzesResponse;
-        subjects.value = subjectsResponse;
-        recentScores.value = scoresResponse.slice(0, 5); // Show only recent 5
+        quizzes.value = Array.isArray(quizzesResponse) ? quizzesResponse : [];
+        subjects.value = Array.isArray(subjectsResponse)
+          ? subjectsResponse
+          : [];
+        recentScores.value = Array.isArray(scoresResponse)
+          ? scoresResponse.slice(0, 5)
+          : [];
 
         // Initialize charts after data is loaded
         setTimeout(() => {
           initCharts();
-        }, 100);
-      } catch (error) {
-        console.error("Error loading dashboard:", error);
+        }, 200);
+
+        console.log("Dashboard loading completed successfully");
+      } catch (err) {
+        console.error("Error loading dashboard:", err);
+        error.value =
+          err.response?.data?.message ||
+          "Failed to load dashboard data. Please try again.";
+
+        // Set default values to prevent UI errors
+        dashboardData.value = {
+          statistics: {
+            total_attempts: 0,
+            avg_percentage: 0,
+            total_subjects: 0,
+            total_quizzes: 0,
+          },
+        };
+        quizzes.value = [];
+        subjects.value = [];
+        recentScores.value = [];
       } finally {
         loading.value = false;
       }
     };
 
     const initCharts = () => {
+      // Destroy existing charts before creating new ones
+      if (performanceChart) {
+        performanceChart.destroy();
+        performanceChart = null;
+      }
+      if (subjectChart) {
+        subjectChart.destroy();
+        subjectChart = null;
+      }
+
       // Monthly Activity Chart
       const performanceCtx = document.getElementById("performanceChart");
       if (performanceCtx && dashboardData.value?.charts?.monthly_activity) {
-        new Chart(performanceCtx, {
+        performanceChart = new Chart(performanceCtx, {
           type: "line",
           data: {
             labels: dashboardData.value.charts.monthly_activity.map(
@@ -323,7 +409,7 @@ export default {
       // Top Quizzes Chart
       const subjectCtx = document.getElementById("subjectChart");
       if (subjectCtx && dashboardData.value?.charts?.top_quizzes) {
-        new Chart(subjectCtx, {
+        subjectChart = new Chart(subjectCtx, {
           type: "doughnut",
           data: {
             labels: dashboardData.value.charts.top_quizzes.map(
@@ -385,13 +471,37 @@ export default {
       return "bg-danger";
     };
 
+    const getCorrectAnswersDisplay = (score) => {
+      // Calculate correct answers from percentage and total questions
+      // Since percentage = (total_scored / total_possible_marks) * 100
+      // And if each question has equal marks, then:
+      // correct_answers = (percentage / 100) * total_questions
+      const correctAnswers = Math.round(
+        (score.percentage / 100) * score.total_questions
+      );
+      return `${correctAnswers}/${score.total_questions}`;
+    };
+
     onMounted(() => {
       loadDashboard();
+    });
+
+    onUnmounted(() => {
+      // Clean up charts when component is unmounted
+      if (performanceChart) {
+        performanceChart.destroy();
+        performanceChart = null;
+      }
+      if (subjectChart) {
+        subjectChart.destroy();
+        subjectChart = null;
+      }
     });
 
     return {
       loading,
       exporting,
+      error,
       dashboardData,
       quizzes,
       subjects,
@@ -403,6 +513,7 @@ export default {
       exportData,
       formatDate,
       getScoreBadgeClass,
+      getCorrectAnswersDisplay,
     };
   },
 };

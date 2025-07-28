@@ -15,15 +15,16 @@
       </div>
     </div>
 
-    <div class="row" v-if="loading">
-      <div class="col-12">
-        <div class="loading-spinner">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading quiz...</span>
-          </div>
-        </div>
-      </div>
-    </div>
+    <LoadingSpinner v-if="loading" message="Loading quiz..." size="large" />
+
+    <!-- Error Alert -->
+    <ErrorAlert
+      v-if="error"
+      :message="error"
+      title="Quiz Loading Error"
+      variant="danger"
+      @dismiss="error = ''"
+    />
 
     <!-- Quiz Content -->
     <div class="row" v-else-if="quiz && !quizCompleted">
@@ -99,7 +100,7 @@
                       :name="`question_${currentQuestion.id}`"
                       :id="`option1_${currentQuestion.id}`"
                       :value="1"
-                      v-model="answers[currentQuestion.id]"
+                      v-model.number="answers.value[currentQuestion.id]"
                     />
                     <label
                       class="form-check-label"
@@ -118,7 +119,7 @@
                       :name="`question_${currentQuestion.id}`"
                       :id="`option2_${currentQuestion.id}`"
                       :value="2"
-                      v-model="answers[currentQuestion.id]"
+                      v-model.number="answers.value[currentQuestion.id]"
                     />
                     <label
                       class="form-check-label"
@@ -137,7 +138,7 @@
                       :name="`question_${currentQuestion.id}`"
                       :id="`option3_${currentQuestion.id}`"
                       :value="3"
-                      v-model="answers[currentQuestion.id]"
+                      v-model.number="answers.value[currentQuestion.id]"
                     />
                     <label
                       class="form-check-label"
@@ -156,7 +157,7 @@
                       :name="`question_${currentQuestion.id}`"
                       :id="`option4_${currentQuestion.id}`"
                       :value="4"
-                      v-model="answers[currentQuestion.id]"
+                      v-model.number="answers.value[currentQuestion.id]"
                     />
                     <label
                       class="form-check-label"
@@ -207,9 +208,7 @@
                 <div class="card bg-primary text-white">
                   <div class="card-body">
                     <h4>
-                      {{ quizResult.total_scored }}/{{
-                        quizResult.total_questions
-                      }}
+                      {{ getCorrectAnswersDisplay(quizResult) }}
                     </h4>
                     <p class="mb-0">Score</p>
                   </div>
@@ -287,10 +286,6 @@
           <div class="modal-body">
             <p>Are you sure you want to submit your quiz?</p>
             <p class="text-muted">
-              Answered: {{ answeredCount }}/{{
-                quiz?.questions.length || 0
-              }}
-              questions<br />
               Time remaining: {{ formatTime(timeRemaining) }}
             </p>
           </div>
@@ -372,9 +367,15 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import api from "../services/api";
+import LoadingSpinner from "../components/LoadingSpinner.vue";
+import ErrorAlert from "../components/ErrorAlert.vue";
 
 export default {
   name: "QuizAttempt",
+  components: {
+    LoadingSpinner,
+    ErrorAlert,
+  },
   setup() {
     const route = useRoute();
     const router = useRouter();
@@ -414,18 +415,60 @@ export default {
 
       try {
         const quizId = route.params.id;
+        console.log("Loading quiz with ID:", quizId);
+
+        if (!quizId) {
+          throw new Error("Quiz ID is required");
+        }
+
         const response = await api.getQuizForAttempt(quizId);
-        quiz.value = response;
+        console.log("Quiz loaded:", response);
+
+        if (
+          !response ||
+          !response.questions ||
+          !Array.isArray(response.questions)
+        ) {
+          throw new Error("Invalid quiz data received");
+        }
+
+        if (response.questions.length === 0) {
+          throw new Error("This quiz has no questions");
+        }
+
+        // Backend returns {quiz: {...}, questions: [...]}
+        // We need to combine them for the frontend
+        quiz.value = {
+          ...response.quiz,
+          questions: response.questions,
+        };
 
         // Parse time duration (HH:MM format) to seconds
-        const [hours, minutes] = response.time_duration.split(":").map(Number);
-        timeRemaining.value = hours * 3600 + minutes * 60;
+        try {
+          const [hours, minutes] = response.quiz.time_duration
+            .split(":")
+            .map(Number);
+          if (isNaN(hours) || isNaN(minutes)) {
+            throw new Error("Invalid time duration format");
+          }
+          timeRemaining.value = hours * 3600 + minutes * 60;
+        } catch (timeError) {
+          console.error("Error parsing time duration:", timeError);
+          // Default to 30 minutes if time parsing fails
+          timeRemaining.value = 30 * 60;
+        }
+
+        // Initialize answers array
+        answers.value = {};
 
         startTime.value = Date.now();
         startTimer();
+
+        console.log("Quiz loading completed successfully");
       } catch (err) {
         console.error("Error loading quiz:", err);
-        error.value = err.response?.data?.message || "Failed to load quiz";
+        error.value =
+          err.response?.data?.message || err.message || "Failed to load quiz";
       } finally {
         loading.value = false;
       }
@@ -464,6 +507,14 @@ export default {
         .padStart(2, "0")}`;
     };
 
+    const getCorrectAnswersDisplay = (result) => {
+      // Calculate correct answers from percentage and total questions
+      const correctAnswers = Math.round(
+        (result.percentage / 100) * result.total_questions
+      );
+      return `${correctAnswers}/${result.total_questions}`;
+    };
+
     const goToQuestion = (index) => {
       if (index >= 0 && index < quiz.value.questions.length) {
         currentQuestionIndex.value = index;
@@ -484,7 +535,7 @@ export default {
 
     const getQuestionButtonClass = (index) => {
       const question = quiz.value.questions[index];
-      const isAnswered = answers[question.id] !== undefined;
+      const isAnswered = answers.value[question.id] !== undefined;
       const isCurrent = index === currentQuestionIndex.value;
 
       if (isCurrent) {
@@ -498,27 +549,57 @@ export default {
       stopTimer();
 
       try {
-        // Calculate time taken
+        console.log("Submitting quiz...");
+
+        // Calculate time taken in seconds
         const timeTakenSeconds = Math.floor(
           (Date.now() - startTime.value) / 1000
         );
-        const timeTakenFormatted = formatTime(timeTakenSeconds);
+
+        // Convert to HH:MM format as expected by backend
+        // Ensure minimum of 1 minute for very quick submissions
+        const totalMinutes = Math.max(1, Math.floor(timeTakenSeconds / 60));
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        const timeTakenFormatted = `${hours
+          .toString()
+          .padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+
+        // Convert answers to the format expected by backend
+        // Backend expects {question_id: option_number} where option_number is 1,2,3,4
+        const formattedAnswers = {};
+        Object.keys(answers.value).forEach((questionId) => {
+          const answer = answers.value[questionId];
+          if (answer !== undefined && answer !== null) {
+            formattedAnswers[questionId] = parseInt(answer);
+          }
+        });
 
         // Prepare submission data
         const submissionData = {
           quiz_id: parseInt(route.params.id),
-          answers: answers,
+          answers: formattedAnswers,
           time_taken: timeTakenFormatted,
         };
 
+        console.log("Submission data:", submissionData);
+        console.log("Formatted answers:", formattedAnswers);
+        console.log("Time taken formatted:", timeTakenFormatted);
+
         const response = await api.submitQuizScore(submissionData);
+        console.log("Quiz submitted successfully:", response);
+
         quizResult.value = response;
         quizCompleted.value = true;
         showSubmitConfirm.value = false;
       } catch (err) {
         console.error("Error submitting quiz:", err);
-        alert("Failed to submit quiz. Please try again.");
-        // Restart timer if submission failed
+        const errorMessage =
+          err.response?.data?.message ||
+          "Failed to submit quiz. Please try again.";
+        alert(errorMessage);
+
+        // Restart timer if submission failed and time is remaining
         if (timeRemaining.value > 0) {
           startTimer();
         }
@@ -566,6 +647,7 @@ export default {
       showSubmitConfirm,
       showExitConfirm,
       formatTime,
+      getCorrectAnswersDisplay,
       goToQuestion,
       nextQuestion,
       previousQuestion,

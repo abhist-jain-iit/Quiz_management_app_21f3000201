@@ -162,6 +162,11 @@ export default {
         localStorage.setItem("refresh_token", response.refresh_token);
         localStorage.setItem("user", JSON.stringify(response.user));
 
+        // Trigger auth state update
+        if (window.updateAuthState) {
+          window.updateAuthState();
+        }
+
         // Redirect based on user role
         if (response.user.is_admin) {
           router.push("/admin");

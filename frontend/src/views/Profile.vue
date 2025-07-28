@@ -19,18 +19,22 @@
             <div v-else-if="user">
               <div class="row">
                 <div class="col-md-4 text-center mb-4">
-                  <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" 
-                       style="width: 120px; height: 120px; font-size: 3rem;">
+                  <div
+                    class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                    style="width: 120px; height: 120px; font-size: 3rem"
+                  >
                     <i class="bi bi-person-fill"></i>
                   </div>
                   <h5 class="mt-3">{{ user.full_name }}</h5>
                   <p class="text-muted">{{ user.email }}</p>
-                  <span class="badge bg-primary">{{ user.is_admin ? 'Administrator' : 'Student' }}</span>
+                  <span class="badge bg-primary">{{
+                    user.is_admin ? "Administrator" : "Student"
+                  }}</span>
                 </div>
 
                 <div class="col-md-8">
                   <h5 class="mb-3">Profile Information</h5>
-                  
+
                   <div class="row mb-3">
                     <div class="col-sm-4">
                       <strong>Username:</strong>
@@ -90,8 +94,11 @@
                       <strong>Account Status:</strong>
                     </div>
                     <div class="col-sm-8">
-                      <span class="badge" :class="user.is_active ? 'bg-success' : 'bg-danger'">
-                        {{ user.is_active ? 'Active' : 'Inactive' }}
+                      <span
+                        class="badge"
+                        :class="user.is_active ? 'bg-success' : 'bg-danger'"
+                      >
+                        {{ user.is_active ? "Active" : "Inactive" }}
                       </span>
                     </div>
                   </div>
@@ -105,35 +112,37 @@
                   <div class="col-md-3">
                     <div class="card bg-primary text-white text-center">
                       <div class="card-body">
-                        <h4>{{ stats.total_attempts || 0 }}</h4>
+                        <h4>{{ stats.statistics?.total_attempts || 0 }}</h4>
                         <p class="mb-0">Total Attempts</p>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div class="col-md-3">
                     <div class="card bg-success text-white text-center">
                       <div class="card-body">
-                        <h4>{{ stats.average_score || 0 }}%</h4>
+                        <h4>{{ stats.statistics?.avg_percentage || 0 }}%</h4>
                         <p class="mb-0">Average Score</p>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div class="col-md-3">
                     <div class="card bg-info text-white text-center">
                       <div class="card-body">
-                        <h4>{{ stats.best_score || 0 }}%</h4>
+                        <h4>
+                          {{ stats.statistics?.best_score?.percentage || 0 }}%
+                        </h4>
                         <p class="mb-0">Best Score</p>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div class="col-md-3">
                     <div class="card bg-warning text-white text-center">
                       <div class="card-body">
-                        <h4>{{ stats.subjects_attempted || 0 }}</h4>
-                        <p class="mb-0">Subjects</p>
+                        <h4>{{ stats.statistics?.total_subjects || 0 }}</h4>
+                        <p class="mb-0">Total Subjects</p>
                       </div>
                     </div>
                   </div>
@@ -158,13 +167,18 @@
                       <tr v-for="score in recentScores" :key="score.id">
                         <td>{{ score.quiz_title }}</td>
                         <td>{{ formatDate(score.time_stamp_of_attempt) }}</td>
-                        <td>{{ score.total_scored }}/{{ score.total_questions }}</td>
                         <td>
-                          <span class="badge" :class="getScoreBadgeClass(score.percentage)">
+                          {{ score.total_scored }}/{{ score.total_questions }}
+                        </td>
+                        <td>
+                          <span
+                            class="badge"
+                            :class="getScoreBadgeClass(score.percentage)"
+                          >
                             {{ score.percentage }}%
                           </span>
                         </td>
-                        <td>{{ score.time_taken || 'N/A' }}</td>
+                        <td>{{ formatTimeTaken(score.time_taken) }}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -179,50 +193,80 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
-import api from '../services/api'
+import { ref, onMounted } from "vue";
+import api from "../services/api";
 
 export default {
-  name: 'Profile',
+  name: "Profile",
   setup() {
-    const loading = ref(false)
-    const user = ref(null)
-    const stats = ref(null)
-    const recentScores = ref([])
+    const loading = ref(false);
+    const user = ref(null);
+    const stats = ref(null);
+    const recentScores = ref([]);
 
     const loadProfile = async () => {
-      loading.value = true
+      loading.value = true;
       try {
-        const [profileResponse, dashboardResponse, scoresResponse] = await Promise.all([
-          api.getProfile(),
-          api.getDashboard(),
-          api.getScores()
-        ])
-        
-        user.value = profileResponse.user
-        stats.value = dashboardResponse
-        recentScores.value = scoresResponse.slice(0, 10) // Show recent 10
+        const [profileResponse, dashboardResponse, scoresResponse] =
+          await Promise.all([
+            api.getProfile(),
+            api.getDashboard(),
+            api.getScores(),
+          ]);
+
+        user.value = profileResponse.user;
+        stats.value = dashboardResponse;
+        recentScores.value = scoresResponse.slice(0, 10); // Show recent 10
       } catch (error) {
-        console.error('Error loading profile:', error)
+        console.error("Error loading profile:", error);
       } finally {
-        loading.value = false
+        loading.value = false;
       }
-    }
+    };
 
     const formatDate = (dateString) => {
-      if (!dateString) return 'N/A'
-      return new Date(dateString).toLocaleDateString()
-    }
+      if (!dateString) return "N/A";
+      return new Date(dateString).toLocaleDateString();
+    };
+
+    const formatTimeTaken = (timeTaken) => {
+      if (!timeTaken || timeTaken === "00:00") {
+        return "< 1 min";
+      }
+
+      // Parse HH:MM format
+      const parts = timeTaken.split(":");
+      if (parts.length !== 2) {
+        return timeTaken || "N/A";
+      }
+
+      const hours = parseInt(parts[0]);
+      const minutes = parseInt(parts[1]);
+
+      if (hours === 0 && minutes === 0) {
+        return "< 1 min";
+      }
+
+      if (hours === 0) {
+        return `${minutes} min`;
+      }
+
+      if (minutes === 0) {
+        return `${hours}h`;
+      }
+
+      return `${hours}h ${minutes}m`;
+    };
 
     const getScoreBadgeClass = (percentage) => {
-      if (percentage >= 80) return 'bg-success'
-      if (percentage >= 60) return 'bg-warning'
-      return 'bg-danger'
-    }
+      if (percentage >= 80) return "bg-success";
+      if (percentage >= 60) return "bg-warning";
+      return "bg-danger";
+    };
 
     onMounted(() => {
-      loadProfile()
-    })
+      loadProfile();
+    });
 
     return {
       loading,
@@ -230,8 +274,9 @@ export default {
       stats,
       recentScores,
       formatDate,
-      getScoreBadgeClass
-    }
-  }
-}
+      formatTimeTaken,
+      getScoreBadgeClass,
+    };
+  },
+};
 </script>

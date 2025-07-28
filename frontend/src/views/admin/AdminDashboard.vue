@@ -101,7 +101,7 @@
             <div class="card bg-primary text-white">
               <div class="card-body text-center">
                 <i class="bi bi-people fs-1 mb-2"></i>
-                <h4>{{ dashboardData.total_users || 0 }}</h4>
+                <h4>{{ dashboardData.statistics?.total_users || 0 }}</h4>
                 <p class="mb-0">Total Users</p>
               </div>
             </div>
@@ -111,7 +111,7 @@
             <div class="card bg-success text-white">
               <div class="card-body text-center">
                 <i class="bi bi-journal-text fs-1 mb-2"></i>
-                <h4>{{ dashboardData.total_subjects || 0 }}</h4>
+                <h4>{{ dashboardData.statistics?.total_subjects || 0 }}</h4>
                 <p class="mb-0">Subjects</p>
               </div>
             </div>
@@ -121,7 +121,7 @@
             <div class="card bg-info text-white">
               <div class="card-body text-center">
                 <i class="bi bi-clipboard-check fs-1 mb-2"></i>
-                <h4>{{ dashboardData.total_quizzes || 0 }}</h4>
+                <h4>{{ dashboardData.statistics?.total_quizzes || 0 }}</h4>
                 <p class="mb-0">Quizzes</p>
               </div>
             </div>
@@ -131,7 +131,7 @@
             <div class="card bg-warning text-white">
               <div class="card-body text-center">
                 <i class="bi bi-graph-up fs-1 mb-2"></i>
-                <h4>{{ dashboardData.total_attempts || 0 }}</h4>
+                <h4>{{ dashboardData.statistics?.total_attempts || 0 }}</h4>
                 <p class="mb-0">Quiz Attempts</p>
               </div>
             </div>
@@ -355,20 +355,47 @@ export default {
     const loadDashboard = async () => {
       loading.value = true;
       try {
-        const [dashResponse, usersResponse, scoresResponse] = await Promise.all(
-          [api.getDashboard(), api.getUsers(), api.getScores()]
-        );
+        console.log("Loading admin dashboard...");
 
+        // Clear cache and force fresh data
+        const timestamp = Date.now();
+
+        const dashResponse = await api.getDashboard({ _t: timestamp });
+        console.log("Dashboard data loaded:", dashResponse);
         dashboardData.value = dashResponse;
-        recentUsers.value = usersResponse.slice(0, 5);
-        recentAttempts.value = scoresResponse.slice(0, 5);
+
+        const usersResponse = await api.getUsers({ _t: timestamp });
+        console.log("Users loaded:", usersResponse);
+        recentUsers.value = Array.isArray(usersResponse)
+          ? usersResponse.slice(0, 5)
+          : [];
+
+        const scoresResponse = await api.getScores({ _t: timestamp });
+        console.log("Scores loaded:", scoresResponse);
+        recentAttempts.value = Array.isArray(scoresResponse)
+          ? scoresResponse.slice(0, 5)
+          : [];
 
         // Initialize charts after data is loaded
         setTimeout(() => {
           initCharts();
-        }, 100);
+        }, 200);
+
+        console.log("Admin dashboard loading completed successfully");
       } catch (error) {
-        // Handle error silently in production
+        console.error("Error loading admin dashboard:", error);
+
+        // Set default values to prevent UI errors
+        dashboardData.value = {
+          statistics: {
+            total_users: 0,
+            total_quizzes: 0,
+            total_attempts: 0,
+            avg_score: 0,
+          },
+        };
+        recentUsers.value = [];
+        recentAttempts.value = [];
       } finally {
         loading.value = false;
       }

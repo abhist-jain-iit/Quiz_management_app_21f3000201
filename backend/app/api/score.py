@@ -56,14 +56,14 @@ class ScoreApi(Resource):
         if not quiz.is_active:
             return {'message': 'Quiz is not active'}, 400
         
-        # Check if user has already attempted this quiz (optional - remove if multiple attempts allowed)
-        existing_score = Score.query.filter_by(
+        # Check if user has exceeded maximum attempts (5 attempts allowed)
+        existing_attempts = Score.query.filter_by(
             quiz_id=data.get('quiz_id'),
             user_id=current_user_id
-        ).first()
-        
-        if existing_score:
-            return {'message': 'You have already attempted this quiz'}, 409
+        ).count()
+
+        if existing_attempts >= 5:
+            return {'message': 'You have reached the maximum number of attempts (5) for this quiz'}, 409
         
         # Get all questions for this quiz
         questions = quiz.questions.all()

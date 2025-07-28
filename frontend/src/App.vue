@@ -142,18 +142,21 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
 
 export default {
   name: "App",
   setup() {
     const router = useRouter();
+    const route = useRoute();
     const loading = ref(false);
     const user = ref(null);
+    const authToken = ref(localStorage.getItem("access_token"));
 
+    // Reactive authentication state
     const isAuthenticated = computed(() => {
-      return !!localStorage.getItem("access_token") && !!user.value;
+      return !!authToken.value && !!user.value;
     });
 
     const isAdmin = computed(() => {
@@ -162,22 +165,82 @@ export default {
 
     const loadUser = () => {
       const userData = localStorage.getItem("user");
-      if (userData) {
-        user.value = JSON.parse(userData);
+      const token = localStorage.getItem("access_token");
+
+      authToken.value = token;
+
+      if (userData && token) {
+        try {
+          user.value = JSON.parse(userData);
+        } catch (e) {
+          console.error("Error parsing user data:", e);
+          user.value = null;
+          authToken.value = null;
+          clearAuthData();
+        }
+      } else {
+        user.value = null;
+        authToken.value = null;
       }
     };
 
-    const logout = () => {
+    const clearAuthData = () => {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("user");
       user.value = null;
-      router.push("/login");
+      authToken.value = null;
+    };
+
+    const logout = async () => {
+      try {
+        // Optional: Call logout API endpoint
+        // await api.logout();
+      } catch (error) {
+        console.error("Logout API error:", error);
+      } finally {
+        clearAuthData();
+        router.push("/login");
+      }
+    };
+
+    // Storage event listener for cross-tab synchronization
+    const handleStorageChange = (e) => {
+      if (e.key === "user" || e.key === "access_token") {
+        loadUser();
+      }
+    };
+
+    // Custom event listener for manual auth updates
+    const handleAuthUpdate = () => {
+      loadUser();
     };
 
     onMounted(() => {
       loadUser();
+      window.addEventListener("storage", handleStorageChange);
+      window.addEventListener("auth-update", handleAuthUpdate);
     });
+
+    onUnmounted(() => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("auth-update", handleAuthUpdate);
+    });
+
+    // Watch for route changes
+    watch(
+      () => route.path,
+      () => {
+        // Force reload user data on route change
+        loadUser();
+      }
+    );
+
+    // Provide global auth update function
+    window.updateAuthState = () => {
+      loadUser();
+      window.dispatchEvent(new CustomEvent("auth-update"));
+    };
 
     return {
       loading,
@@ -185,6 +248,7 @@ export default {
       isAuthenticated,
       isAdmin,
       logout,
+      loadUser,
     };
   },
 };

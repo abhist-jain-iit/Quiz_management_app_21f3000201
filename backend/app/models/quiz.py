@@ -6,7 +6,7 @@ class Quiz(BaseModel):
     
     chapter_id = db.Column(db.Integer, db.ForeignKey('chapters.id'), nullable=False)
     date_of_quiz = db.Column(db.Date, nullable=False, default=datetime.utcnow().date())
-    time_duration = db.Column(db.String(5), nullable=False)  # HH:MM format as string
+    time_duration = db.Column(db.String(8), nullable=False)  # HH:MM:SS format as string
     remarks = db.Column(db.Text)
     title = db.Column(db.String(200), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
@@ -21,6 +21,7 @@ class Quiz(BaseModel):
             'title': self.title,
             'chapter_id': self.chapter_id,
             'chapter_name': self.chapter.name if self.chapter else None,
+            'subject_id': self.chapter.subject_id if self.chapter and self.chapter.subject else None,
             'subject_name': self.chapter.subject.name if self.chapter and self.chapter.subject else None,
             'date_of_quiz': self.date_of_quiz.isoformat() if self.date_of_quiz else None,
             'time_duration': self.time_duration,

@@ -164,24 +164,38 @@ class DashboardApi(Resource):
         
         # Performance statistics
         if user_scores:
-            total_scored = sum(score.total_scored for score in user_scores)
-            total_possible = sum(score.total_questions for score in user_scores)
-            average_score = total_scored / len(user_scores)
-            average_percentage = (total_scored / total_possible * 100) if total_possible > 0 else 0
-            
-            # Best score
-            best_score = max(user_scores, key=lambda x: x.total_scored)
-            
+            # Calculate average percentage using the same logic as Score model
+            total_percentage = 0
+            valid_scores = 0
+
+            for score in user_scores:
+                score_json = score.convert_to_json()
+                if score_json['percentage'] > 0:
+                    total_percentage += score_json['percentage']
+                    valid_scores += 1
+
+            average_score = sum(score.total_scored for score in user_scores) / len(user_scores)
+            average_percentage = (total_percentage / valid_scores) if valid_scores > 0 else 0
+
+            # Best score (by percentage)
+            best_score = None
+            best_percentage = 0
+            for score in user_scores:
+                score_json = score.convert_to_json()
+                if score_json['percentage'] > best_percentage:
+                    best_percentage = score_json['percentage']
+                    best_score = score
+
             # Recent performance (last 5 attempts)
             recent_scores = Score.query.filter_by(user_id=user.id).order_by(Score.time_stamp_of_attempt.desc()).limit(5).all()
             recent_performance = []
             for score in recent_scores:
-                percentage = (score.total_scored / score.total_questions * 100) if score.total_questions > 0 else 0
+                score_json = score.convert_to_json()
                 recent_performance.append({
                     'quiz_title': score.quiz.title,
                     'score': score.total_scored,
                     'total': score.total_questions,
-                    'percentage': round(percentage, 2),
+                    'percentage': score_json['percentage'],
                     'date': score.time_stamp_of_attempt.strftime('%Y-%m-%d')
                 })
         else:
@@ -229,7 +243,9 @@ class DashboardApi(Resource):
                 'total_attempts': total_attempts,
                 'total_quizzes_available': total_quizzes_available,
                 'average_score': round(average_score, 2),
-                'average_percentage': round(average_percentage, 2),
+                'avg_percentage': round(average_percentage, 2),
+                'total_subjects': Subject.query.count(),
+                'total_quizzes': total_quizzes_available,
                 'best_score': best_score.convert_to_json() if best_score else None
             },
             'charts': {

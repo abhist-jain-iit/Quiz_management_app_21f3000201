@@ -2,7 +2,7 @@ from flask import request, current_app
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
-from ..models import db, User, Subject, Chapter, Quiz
+from ..models import db, User, Subject, Chapter, Quiz, Score
 from ..auth import admin_required
 
 class QuizApi(Resource):
@@ -34,8 +34,30 @@ class QuizApi(Resource):
         quizzes = quizzes.all()
 
         quiz_list = []
+
+        # Check if user is authenticated to include attempt count
+        try:
+            from flask_jwt_extended import verify_jwt_in_request
+            verify_jwt_in_request(optional=True)
+            current_user_id = get_jwt_identity()
+            include_attempts = current_user_id is not None
+        except Exception as e:
+            include_attempts = False
+            current_user_id = None
+
         for quiz in quizzes:
-            quiz_list.append(quiz.convert_to_json())
+            quiz_data = quiz.convert_to_json()
+
+            # Add attempt count information for authenticated users
+            if include_attempts and current_user_id:
+                user_attempts = Score.query.filter_by(
+                    quiz_id=quiz.id,
+                    user_id=current_user_id
+                ).count()
+                quiz_data['user_attempts'] = user_attempts
+                quiz_data['attempts_left'] = max(0, 5 - user_attempts)
+
+            quiz_list.append(quiz_data)
 
         return quiz_list, 200
 
@@ -69,15 +91,15 @@ class QuizApi(Resource):
         time_duration = data.get('time_duration').strip()
         try:
             time_parts = time_duration.split(':')
-            if len(time_parts) != 2:
-                return {'message': 'Invalid time format. Use HH:MM'}, 400
-            hours, minutes = int(time_parts[0]), int(time_parts[1])
-            if hours < 0 or hours > 23 or minutes < 0 or minutes > 59:
+            if len(time_parts) != 3:
+                return {'message': 'Invalid time format. Use HH:MM:SS'}, 400
+            hours, minutes, seconds = int(time_parts[0]), int(time_parts[1]), int(time_parts[2])
+            if hours < 0 or hours > 23 or minutes < 0 or minutes > 59 or seconds < 0 or seconds > 59:
                 return {'message': 'Invalid time values'}, 400
-            # Store as string in HH:MM format
-            duration = f"{hours:02d}:{minutes:02d}"
+            # Store as string in HH:MM:SS format
+            duration = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
         except (ValueError, IndexError):
-            return {'message': 'Invalid time format. Use HH:MM'}, 400
+            return {'message': 'Invalid time format. Use HH:MM:SS'}, 400
         
         try:
             new_quiz = Quiz(
@@ -135,15 +157,15 @@ class QuizApi(Resource):
         time_duration = data.get('time_duration').strip()
         try:
             time_parts = time_duration.split(':')
-            if len(time_parts) != 2:
-                return {'message': 'Invalid time format. Use HH:MM'}, 400
-            hours, minutes = int(time_parts[0]), int(time_parts[1])
-            if hours < 0 or hours > 23 or minutes < 0 or minutes > 59:
+            if len(time_parts) != 3:
+                return {'message': 'Invalid time format. Use HH:MM:SS'}, 400
+            hours, minutes, seconds = int(time_parts[0]), int(time_parts[1]), int(time_parts[2])
+            if hours < 0 or hours > 23 or minutes < 0 or minutes > 59 or seconds < 0 or seconds > 59:
                 return {'message': 'Invalid time values'}, 400
-            # Store as string in HH:MM format
-            duration = f"{hours:02d}:{minutes:02d}"
+            # Store as string in HH:MM:SS format
+            duration = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
         except (ValueError, IndexError):
-            return {'message': 'Invalid time format. Use HH:MM'}, 400
+            return {'message': 'Invalid time format. Use HH:MM:SS'}, 400
         
         try:
             quiz.title = data.get('title').strip()
