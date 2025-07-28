@@ -215,13 +215,61 @@ class ApiService {
 
   // Export
   async exportUserCSV() {
-    const response = await this.client.post('/export/user-csv')
-    return response.data
+    const response = await this.client.post('/export/user-csv', {}, {
+      responseType: 'blob'
+    })
+
+    // Create download link
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+
+    // Get filename from response headers or use default
+    const contentDisposition = response.headers['content-disposition']
+    let filename = 'quiz_data.csv'
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/)
+      if (filenameMatch) {
+        filename = filenameMatch[1]
+      }
+    }
+
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+
+    return { message: 'CSV downloaded successfully' }
   }
 
   async exportAdminCSV() {
-    const response = await this.client.post('/export/admin-csv')
-    return response.data
+    const response = await this.client.post('/export/admin-csv', {}, {
+      responseType: 'blob'
+    })
+
+    // Create download link
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+
+    // Get filename from response headers or use default
+    const contentDisposition = response.headers['content-disposition']
+    let filename = 'admin_users_data.csv'
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/)
+      if (filenameMatch) {
+        filename = filenameMatch[1]
+      }
+    }
+
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+
+    return { message: 'CSV downloaded successfully' }
   }
 }
 

@@ -74,21 +74,29 @@ class QuestionApi(Resource):
         if existing_question:
             return {"message": "Question already exists in this quiz."}, 409
         
-        new_question = Question(
-            question_statement=data.get('question_statement').strip(),
-            option1=data.get('option1').strip(),
-            option2=data.get('option2').strip(),
-            option3=data.get('option3', '').strip() if data.get('option3') else None,
-            option4=data.get('option4', '').strip() if data.get('option4') else None,
-            correct_option=correct_option,
-            quiz_id=data.get('quiz_id'),
-            marks=data.get('marks', 1)
-        )
-        
-        db.session.add(new_question)
-        db.session.commit()
-        
-        return new_question.convert_to_json(), 201
+        try:
+            new_question = Question(
+                question_statement=data.get('question_statement').strip(),
+                option1=data.get('option1').strip(),
+                option2=data.get('option2').strip(),
+                option3=data.get('option3', '').strip() if data.get('option3') else None,
+                option4=data.get('option4', '').strip() if data.get('option4') else None,
+                correct_option=correct_option,
+                quiz_id=data.get('quiz_id'),
+                marks=data.get('marks', 1)
+            )
+
+            db.session.add(new_question)
+            db.session.commit()
+
+            return new_question.convert_to_json(), 201
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error creating question: {e}")
+            import traceback
+            traceback.print_exc()
+            return {'message': f'Error creating question: {str(e)}'}, 500
 
     @jwt_required()
     @admin_required()
@@ -127,18 +135,26 @@ class QuestionApi(Resource):
         if existing_question and existing_question.id != question_id:
             return {"message": "Question already exists in this quiz."}, 409
         
-        question.question_statement = data.get('question_statement').strip()
-        question.option1 = data.get('option1').strip()
-        question.option2 = data.get('option2').strip()
-        question.option3 = data.get('option3').strip()
-        question.option4 = data.get('option4').strip()
-        question.correct_option = correct_option
-        question.quiz_id = data.get('quiz_id')
-        question.marks = data.get('marks', question.marks)
-        
-        db.session.commit()
-        
-        return question.convert_to_json(), 200
+        try:
+            question.question_statement = data.get('question_statement').strip()
+            question.option1 = data.get('option1').strip()
+            question.option2 = data.get('option2').strip()
+            question.option3 = data.get('option3').strip()
+            question.option4 = data.get('option4').strip()
+            question.correct_option = correct_option
+            question.quiz_id = data.get('quiz_id')
+            question.marks = data.get('marks', question.marks)
+
+            db.session.commit()
+
+            return question.convert_to_json(), 200
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating question: {e}")
+            import traceback
+            traceback.print_exc()
+            return {'message': f'Error updating question: {str(e)}'}, 500
 
     @jwt_required()
     @admin_required()

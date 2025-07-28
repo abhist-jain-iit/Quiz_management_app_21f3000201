@@ -79,21 +79,27 @@ class QuizApi(Resource):
         except (ValueError, IndexError):
             return {'message': 'Invalid time format. Use HH:MM'}, 400
         
-        new_quiz = Quiz(
-            title=data.get('title').strip(),
-            chapter_id=data.get('chapter_id'),
-            date_of_quiz=quiz_date,
-            time_duration=duration,
-            remarks=data.get('remarks', '').strip(),
-            is_active=data.get('is_active', True)
-        )
-        
-        db.session.add(new_quiz)
-        db.session.commit()
-        
-        # Cache invalidation removed for simplicity
+        try:
+            new_quiz = Quiz(
+                title=data.get('title').strip(),
+                chapter_id=data.get('chapter_id'),
+                date_of_quiz=quiz_date,
+                time_duration=duration,
+                remarks=data.get('remarks', '').strip(),
+                is_active=data.get('is_active', True)
+            )
 
-        return new_quiz.convert_to_json(), 201
+            db.session.add(new_quiz)
+            db.session.commit()
+
+            return new_quiz.convert_to_json(), 201
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error creating quiz: {e}")
+            import traceback
+            traceback.print_exc()
+            return {'message': f'Error creating quiz: {str(e)}'}, 500
 
     @jwt_required()
     @admin_required()
@@ -139,17 +145,30 @@ class QuizApi(Resource):
         except (ValueError, IndexError):
             return {'message': 'Invalid time format. Use HH:MM'}, 400
         
-        quiz.title = data.get('title').strip()
-        quiz.chapter_id = data.get('chapter_id')
-        quiz.date_of_quiz = quiz_date
-        quiz.time_duration = duration
-        quiz.remarks = data.get('remarks', '').strip()
-        quiz.is_active = data.get('is_active', quiz.is_active)
-        
-        db.session.commit()
-        
-        cache.delete('all_quizzes')
-        return quiz.convert_to_json(), 200
+        try:
+            quiz.title = data.get('title').strip()
+            quiz.chapter_id = data.get('chapter_id')
+            quiz.date_of_quiz = quiz_date
+            quiz.time_duration = duration
+            quiz.remarks = data.get('remarks', '').strip()
+            quiz.is_active = data.get('is_active', quiz.is_active)
+
+            db.session.commit()
+
+            # Clear cache safely
+            try:
+                cache.clear()
+            except Exception as cache_error:
+                print(f"Cache clear error: {cache_error}")
+
+            return quiz.convert_to_json(), 200
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating quiz: {e}")
+            import traceback
+            traceback.print_exc()
+            return {'message': f'Error updating quiz: {str(e)}'}, 500
 
     @jwt_required()
     @admin_required()

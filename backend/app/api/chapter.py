@@ -120,15 +120,28 @@ class ChapterApi(Resource):
         if existing_chapter and existing_chapter.id != chapter_id:
             return {"message": "Chapter name already exists in this subject."}, 409
         
-        chapter.name = data.get('name').strip()
-        chapter.description = data.get('description').strip()
-        chapter.subject_id = data.get('subject_id')
-        
-        db.session.commit()
-        
-        cache = current_app.cache
-        cache.delete('all_chapters')
-        return chapter.convert_to_json(), 200
+        try:
+            chapter.name = data.get('name').strip()
+            chapter.description = data.get('description').strip()
+            chapter.subject_id = data.get('subject_id')
+
+            db.session.commit()
+
+            # Clear cache safely
+            try:
+                cache = current_app.cache
+                cache.clear()
+            except Exception as cache_error:
+                print(f"Cache clear error: {cache_error}")
+
+            return chapter.convert_to_json(), 200
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating chapter: {e}")
+            import traceback
+            traceback.print_exc()
+            return {'message': f'Error updating chapter: {str(e)}'}, 500
 
     @jwt_required()
     @admin_required()

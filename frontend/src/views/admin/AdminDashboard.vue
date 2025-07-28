@@ -457,8 +457,8 @@ export default {
     const exportData = async () => {
       exporting.value = true;
       try {
-        await api.exportAdminCSV();
-        alert("Export started! You will be notified when ready.");
+        const result = await api.exportAdminCSV();
+        alert("Admin CSV file downloaded successfully!");
       } catch (error) {
         console.error("Export error:", error);
         alert("Export failed. Please try again.");

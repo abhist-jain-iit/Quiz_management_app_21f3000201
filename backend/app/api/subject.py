@@ -82,22 +82,30 @@ class SubjectApi(Resource):
         if existing_subject:
             return {"message": "Subject already exists."}, 409
         
-        new_subject = Subject(
-            name=data.get('name').strip(),
-            description=data.get('description').strip()
-        )
-        
-        db.session.add(new_subject)
-        db.session.commit()
-
-        # Invalidate caches
         try:
-            cache = current_app.cache
-            cache.clear()  # Simple approach - clear all cache
-        except Exception as e:
-            print(f"Cache clear error: {e}")
+            new_subject = Subject(
+                name=data.get('name').strip(),
+                description=data.get('description').strip()
+            )
 
-        return new_subject.convert_to_json(), 201
+            db.session.add(new_subject)
+            db.session.commit()
+
+            # Invalidate caches
+            try:
+                cache = current_app.cache
+                cache.clear()  # Simple approach - clear all cache
+            except Exception as e:
+                print(f"Cache clear error: {e}")
+
+            return new_subject.convert_to_json(), 201
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error creating subject: {e}")
+            import traceback
+            traceback.print_exc()
+            return {'message': f'Error creating subject: {str(e)}'}, 500
 
     @jwt_required()
     @admin_required()
@@ -123,19 +131,27 @@ class SubjectApi(Resource):
         if existing_subject and existing_subject.id != subject_id:
             return {"message": "Subject name already exists."}, 409
         
-        subject.name = data.get('name').strip()
-        subject.description = data.get('description').strip()
-        
-        db.session.commit()
-
-        # Invalidate caches
         try:
-            cache = current_app.cache
-            cache.clear()  # Clear all cache to be safe
-        except Exception as e:
-            print(f"Cache clear error: {e}")
+            subject.name = data.get('name').strip()
+            subject.description = data.get('description').strip()
 
-        return subject.convert_to_json(), 200
+            db.session.commit()
+
+            # Invalidate caches
+            try:
+                cache = current_app.cache
+                cache.clear()  # Clear all cache to be safe
+            except Exception as e:
+                print(f"Cache clear error: {e}")
+
+            return subject.convert_to_json(), 200
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating subject: {e}")
+            import traceback
+            traceback.print_exc()
+            return {'message': f'Error updating subject: {str(e)}'}, 500
 
     @jwt_required()
     @admin_required()

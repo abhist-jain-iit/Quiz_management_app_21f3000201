@@ -364,8 +364,8 @@ export default {
     const exportData = async () => {
       exporting.value = true;
       try {
-        await api.exportUserCSV();
-        alert("Export started! You will be notified when ready.");
+        const result = await api.exportUserCSV();
+        alert("CSV file downloaded successfully!");
       } catch (error) {
         console.error("Export error:", error);
         alert("Export failed. Please try again.");
