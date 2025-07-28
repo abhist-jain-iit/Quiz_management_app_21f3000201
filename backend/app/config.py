@@ -28,6 +28,9 @@ class Config:
     DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
     SQLALCHEMY_ECHO = False  # Disable SQL logging
 
+    # Default Data Settings
+    CREATE_DEFAULT_DATA = os.environ.get('CREATE_DEFAULT_DATA', 'True').lower() == 'true'
+
     # Celery and Redis configuration
     CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
     CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')

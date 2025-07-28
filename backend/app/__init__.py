@@ -8,6 +8,7 @@ from .models import *
 from .config import config_dict
 from .auth import init_admin_user
 from .api.routes import init_api
+from .default_data import create_default_data
 from flask_caching import Cache
 from .celery_worker import make_celery
 
@@ -107,9 +108,13 @@ def create_app(config_name='development'):
     # Initialize API routes
     init_api(app)
     
-    # Initialize database and create admin user
+    # Initialize database and create admin user and default data
     with app.app_context():
         db.create_all()
         init_admin_user()
+
+        # Create default data if enabled
+        if app.config.get('CREATE_DEFAULT_DATA', True):
+            create_default_data()
     
     return app
