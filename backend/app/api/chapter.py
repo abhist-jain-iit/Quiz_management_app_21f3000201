@@ -127,28 +127,18 @@ class ChapterApi(Resource):
 
         try:
             # Count what will be deleted for confirmation message
-            total_quizzes = len(chapter.quizzes)
+            total_quizzes = chapter.quizzes.count()
             total_questions = 0
             total_scores = 0
 
-            # Delete all associated data in proper order
+            # Count all nested items before deletion
             for quiz in chapter.quizzes:
-                # Delete all questions for this quiz
-                questions = Question.query.filter_by(quiz_id=quiz.id).all()
-                total_questions += len(questions)
-                for question in questions:
-                    db.session.delete(question)
+                total_questions += quiz.questions.count()
+                total_scores += quiz.scores.count()
 
-                # Delete all scores for this quiz
-                scores = Score.query.filter_by(quiz_id=quiz.id).all()
-                total_scores += len(scores)
-                for score in scores:
-                    db.session.delete(score)
+            chapter_name = chapter.name
 
-                # Delete the quiz
-                db.session.delete(quiz)
-
-            # Delete the chapter
+            # Delete the chapter - cascade should handle the rest
             db.session.delete(chapter)
             db.session.commit()
 
@@ -160,7 +150,7 @@ class ChapterApi(Resource):
                 print(f"Cache clear error: {e}")
 
             return {
-                'message': f'Chapter "{chapter.name}" deleted successfully along with {total_quizzes} quizzes, {total_questions} questions, and {total_scores} quiz attempts.'
+                'message': f'Chapter "{chapter_name}" deleted successfully along with {total_quizzes} quizzes, {total_questions} questions, and {total_scores} quiz attempts.'
             }, 200
 
         except Exception as e:

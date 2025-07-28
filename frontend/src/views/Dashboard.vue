@@ -407,3 +407,92 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+/* Ensure text visibility in all themes */
+.card {
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
+.card-header {
+  background-color: var(--bs-secondary-bg);
+  color: var(--bs-body-color);
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.text-muted {
+  color: var(--bs-secondary-color) !important;
+}
+
+.form-select {
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  border-color: var(--bs-border-color);
+}
+
+.form-select:focus {
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.btn {
+  color: var(--bs-btn-color);
+  background-color: var(--bs-btn-bg);
+  border-color: var(--bs-btn-border-color);
+}
+
+.btn:hover {
+  color: var(--bs-btn-hover-color);
+  background-color: var(--bs-btn-hover-bg);
+  border-color: var(--bs-btn-hover-border-color);
+}
+
+/* Dark theme specific adjustments */
+@media (prefers-color-scheme: dark) {
+  .card {
+    background-color: #212529;
+    color: #ffffff;
+  }
+
+  .card-header {
+    background-color: #343a40;
+    color: #ffffff;
+  }
+
+  .text-muted {
+    color: #adb5bd !important;
+  }
+
+  .form-select {
+    background-color: #212529;
+    color: #ffffff;
+    border-color: #495057;
+  }
+}
+
+/* Light theme specific adjustments */
+@media (prefers-color-scheme: light) {
+  .card {
+    background-color: #ffffff;
+    color: #212529;
+  }
+
+  .card-header {
+    background-color: #f8f9fa;
+    color: #212529;
+  }
+
+  .text-muted {
+    color: #6c757d !important;
+  }
+
+  .form-select {
+    background-color: #ffffff;
+    color: #212529;
+    border-color: #ced4da;
+  }
+}
+</style>

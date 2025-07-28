@@ -162,18 +162,11 @@ class QuizApi(Resource):
 
         try:
             # Count what will be deleted for confirmation message
-            total_questions = len(quiz.questions)
-            total_scores = len(quiz.scores)
+            total_questions = quiz.questions.count()
+            total_scores = quiz.scores.count()
+            quiz_title = quiz.title
 
-            # Delete all questions for this quiz
-            for question in quiz.questions:
-                db.session.delete(question)
-
-            # Delete all scores for this quiz
-            for score in quiz.scores:
-                db.session.delete(score)
-
-            # Delete the quiz
+            # Delete the quiz - cascade should handle the rest
             db.session.delete(quiz)
             db.session.commit()
 
@@ -184,7 +177,7 @@ class QuizApi(Resource):
                 print(f"Cache clear error: {e}")
 
             return {
-                'message': f'Quiz "{quiz.title}" deleted successfully along with {total_questions} questions and {total_scores} quiz attempts.'
+                'message': f'Quiz "{quiz_title}" deleted successfully along with {total_questions} questions and {total_scores} quiz attempts.'
             }, 200
 
         except Exception as e:
