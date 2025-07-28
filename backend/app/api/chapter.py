@@ -61,18 +61,31 @@ class ChapterApi(Resource):
         if existing_chapter:
             return {"message": "Chapter already exists in this subject."}, 409
         
-        new_chapter = Chapter(
-            name=data.get('name').strip(),
-            description=data.get('description').strip(),
-            subject_id=data.get('subject_id')
-        )
-        
-        db.session.add(new_chapter)
-        db.session.commit()
-        
-        cache = current_app.cache
-        cache.delete('all_chapters')
-        return new_chapter.convert_to_json(), 201
+        try:
+            new_chapter = Chapter(
+                name=data.get('name').strip(),
+                description=data.get('description').strip(),
+                subject_id=data.get('subject_id')
+            )
+
+            db.session.add(new_chapter)
+            db.session.commit()
+
+            # Clear cache safely
+            try:
+                cache = current_app.cache
+                cache.clear()
+            except Exception as cache_error:
+                print(f"Cache clear error: {cache_error}")
+
+            return new_chapter.convert_to_json(), 201
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error creating chapter: {e}")
+            import traceback
+            traceback.print_exc()
+            return {'message': f'Error creating chapter: {str(e)}'}, 500
 
     @jwt_required()
     @admin_required()

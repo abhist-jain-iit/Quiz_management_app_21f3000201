@@ -1,20 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-// Import components
-import Home from '../views/Home.vue'
-import Login from '../views/auth/Login.vue'
-import Register from '../views/auth/Register.vue'
-import Dashboard from '../views/Dashboard.vue'
-import Profile from '../views/Profile.vue'
-import QuizAttempt from '../views/QuizAttempt.vue'
+// Lazy load components for better performance
+const Home = () => import('../views/Home.vue')
+const Login = () => import('../views/auth/Login.vue')
+const Register = () => import('../views/auth/Register.vue')
+const Dashboard = () => import('../views/Dashboard.vue')
+const Profile = () => import('../views/Profile.vue')
+const QuizAttempt = () => import('../views/QuizAttempt.vue')
 
-// Admin components
-import AdminDashboard from '../views/admin/AdminDashboard.vue'
-import SubjectManagement from '../views/admin/SubjectManagement.vue'
-import ChapterManagement from '../views/admin/ChapterManagement.vue'
-import QuizManagement from '../views/admin/QuizManagement.vue'
-import QuestionManagement from '../views/admin/QuestionManagement.vue'
-import UserManagement from '../views/admin/UserManagement.vue'
+// Admin components - lazy loaded
+const AdminDashboard = () => import('../views/admin/AdminDashboard.vue')
+const SubjectManagement = () => import('../views/admin/SubjectManagement.vue')
+const ChapterManagement = () => import('../views/admin/ChapterManagement.vue')
+const QuizManagement = () => import('../views/admin/QuizManagement.vue')
+const QuestionManagement = () => import('../views/admin/QuestionManagement.vue')
+const UserManagement = () => import('../views/admin/UserManagement.vue')
 
 const routes = [
   {

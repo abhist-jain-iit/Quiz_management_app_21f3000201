@@ -79,10 +79,17 @@
     <div
       v-if="loading"
       class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
-      style="background-color: rgba(0, 0, 0, 0.5); z-index: 9999"
+      style="background-color: rgba(0, 0, 0, 0.7); z-index: 9999"
     >
-      <div class="spinner-border text-light" role="status">
-        <span class="visually-hidden">Loading...</span>
+      <div class="text-center">
+        <div
+          class="spinner-border text-light mb-3"
+          role="status"
+          style="width: 3rem; height: 3rem"
+        >
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="text-light h5">Loading Quiz Master V2...</div>
       </div>
     </div>
   </div>
@@ -200,6 +207,7 @@ body {
 
 .table {
   color: var(--text-color) !important;
+  background-color: var(--card-bg) !important;
 }
 
 .table th {
@@ -209,7 +217,27 @@ body {
 }
 
 .table td {
+  background-color: var(--card-bg) !important;
+  color: var(--text-color) !important;
   border-color: var(--border-color) !important;
+}
+
+/* Remove striped table styling */
+.table-striped > tbody > tr:nth-of-type(odd) > td,
+.table-striped > tbody > tr:nth-of-type(odd) > th {
+  background-color: var(--card-bg) !important;
+}
+
+.table-striped > tbody > tr:nth-of-type(even) > td,
+.table-striped > tbody > tr:nth-of-type(even) > th {
+  background-color: var(--card-bg) !important;
+}
+
+/* Hover effect for table rows */
+.table-hover > tbody > tr:hover > td,
+.table-hover > tbody > tr:hover > th {
+  background-color: var(--bg-color) !important;
+  color: var(--text-color) !important;
 }
 
 .modal-content {
@@ -328,5 +356,49 @@ body {
 
 .btn-outline-dark {
   color: var(--text-color) !important;
+}
+
+/* Navbar specific styling */
+.navbar {
+  background-color: #0d6efd !important;
+}
+
+.navbar-brand {
+  color: #ffffff !important;
+  font-weight: bold;
+}
+
+.navbar-brand:hover {
+  color: #ffffff !important;
+}
+
+.nav-link {
+  color: #ffffff !important;
+  font-weight: 500;
+}
+
+.nav-link:hover {
+  color: #e9ecef !important;
+}
+
+.nav-link.active {
+  color: #ffffff !important;
+  font-weight: bold;
+}
+
+.dropdown-toggle {
+  color: #ffffff !important;
+}
+
+.dropdown-toggle:hover {
+  color: #e9ecef !important;
+}
+
+.navbar-toggler {
+  border-color: #ffffff;
+}
+
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 </style>
