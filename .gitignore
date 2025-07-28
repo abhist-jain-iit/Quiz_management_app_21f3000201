@@ -264,3 +264,15 @@ config.production.py
 # Temporary files
 *.tmp
 *.temp
+
+# Quiz Master V2 specific
+exports/
+uploads/
+celerybeat-schedule*
+dump.rdb
+
+# Redis files (keep only executables)
+Redis/*.dll
+Redis/*.docx
+Redis/*.pdb
+Redis/*.conf

@@ -8,25 +8,52 @@ from ..auth import admin_required
 class QuizApi(Resource):
     def get(self, quiz_id=None):
         """Get all quizzes or specific quiz"""
-        if quiz_id:
-            quiz = Quiz.query.get(quiz_id)
-            if quiz:
-                quiz_data = quiz.convert_to_json()
-                return quiz_data, 200
-            return {'message': 'Quiz does not exist.'}, 404
+        try:
+            cache = current_app.cache
 
-        # For quiz lists, get query parameters
-        search_query = request.args.get('search', '').strip()
-        chapter_id = request.args.get('chapter_id', '')
-        is_active = request.args.get('is_active', '')
+            if quiz_id:
+                # Cache individual quiz for 15 minutes
+                cache_key = f"quiz_{quiz_id}"
+                try:
+                    cached_quiz = cache.get(cache_key)
+                    if cached_quiz:
+                        return cached_quiz, 200
+                except Exception as e:
+                    print(f"Cache get error: {e}")
 
-        if search_query:
-            quizzes = Quiz.query.filter(Quiz.title.ilike(f"%{search_query}%"))
-        else:
-            quizzes = Quiz.query
+                quiz = Quiz.query.get(quiz_id)
+                if quiz:
+                    quiz_data = quiz.convert_to_json()
+                    try:
+                        cache.set(cache_key, quiz_data, timeout=900)  # 15 minutes
+                    except Exception as e:
+                        print(f"Cache set error: {e}")
+                    return quiz_data, 200
+                return {'message': 'Quiz does not exist.'}, 404
 
-        if chapter_id:
-            quizzes = quizzes.filter_by(chapter_id=chapter_id)
+            # For quiz lists, get query parameters
+            search_query = request.args.get('search', '').strip()
+            chapter_id = request.args.get('chapter_id', '')
+            is_active = request.args.get('is_active', '')
+
+            # Create cache key based on query parameters
+            cache_key = f"quizzes_list_{search_query}_{chapter_id}_{is_active}"
+
+            # Try to get from cache first
+            try:
+                cached_list = cache.get(cache_key)
+                if cached_list:
+                    return cached_list, 200
+            except Exception as e:
+                print(f"Cache get error: {e}")
+
+            if search_query:
+                quizzes = Quiz.query.filter(Quiz.title.ilike(f"%{search_query}%"))
+            else:
+                quizzes = Quiz.query
+
+            if chapter_id:
+                quizzes = quizzes.filter_by(chapter_id=chapter_id)
 
         if is_active:
             quizzes = quizzes.filter_by(is_active=is_active.lower() == 'true')
@@ -59,7 +86,17 @@ class QuizApi(Resource):
 
             quiz_list.append(quiz_data)
 
+        # Cache quiz list for 5 minutes
+        try:
+            cache.set(cache_key, quiz_list, timeout=300)
+        except Exception as e:
+            print(f"Cache set error: {e}")
+
         return quiz_list, 200
+
+        except Exception as e:
+            print(f"Quiz API error: {e}")
+            return {'message': 'Internal server error'}, 500
 
     @jwt_required()
     @admin_required()
@@ -113,6 +150,13 @@ class QuizApi(Resource):
 
             db.session.add(new_quiz)
             db.session.commit()
+
+            # Invalidate caches
+            try:
+                cache.clear_pattern("quizzes_list_*")
+                cache.clear_pattern("dashboard_*")
+            except Exception as e:
+                print(f"Cache clear error: {e}")
 
             return new_quiz.convert_to_json(), 201
 

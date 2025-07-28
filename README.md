@@ -1,142 +1,113 @@
 # Quiz Master V2 - MAD II Project
 
-A comprehensive quiz management application built with Flask API backend and Vue.js frontend for Modern Application Development II course.
-
-## Features
-
-### Admin Features
-
-- Subject, Chapter, and Quiz management
-- Question creation with multiple choice options
-- User management and analytics
-- Dashboard with statistics and charts
-- Search functionality across all entities
-- CSV data export
-
-### User Features
-
-- User registration and authentication
-- Interactive quiz taking with timer
-- Score tracking and history
-- Personal dashboard with performance metrics
-- Data export functionality
-
-### Technical Features
-
-- JWT-based authentication
-- Role-based access control
-- Redis caching for performance
-- Celery background jobs for:
-  - Daily user reminders
-  - Monthly performance reports
-  - Asynchronous data export
-- RESTful API design
-- Responsive web interface
-
-## Project Structure
+## Project Folder Structure
 
 ```
 Quiz_management_app_21f3000201/
-├── backend/                    # Flask API Backend
-│   ├── app/                   # Application package
-│   │   ├── api/              # REST API endpoints
-│   │   ├── models/           # Database models
-│   │   ├── __init__.py       # App factory
-│   │   ├── auth.py           # Authentication utilities
-│   │   ├── celery_worker.py  # Celery configuration
-│   │   ├── config.py         # Configuration settings
-│   │   ├── database.py       # Database setup
-│   │   └── tasks.py          # Background tasks
-│   ├── requirements.txt      # Python dependencies
-│   └── run.py               # Application entry point
-├── frontend/                 # Vue.js Frontend
-│   ├── src/                  # Source files
-│   │   ├── components/       # Reusable Vue components
-│   │   ├── views/           # Page components
-│   │   ├── services/        # API service layer
-│   │   ├── router/          # Vue Router configuration
-│   │   ├── App.vue          # Root component
-│   │   └── main.js          # Application entry point
-│   ├── package.json         # Node.js dependencies
-│   └── vite.config.js       # Vite build configuration
-└── README.md               # Project documentation
+├── backend/                    # Flask API
+├── frontend/                   # Vue.js UI
+├── Redis/                      # Redis server files
+└── README.md
 ```
+
+## How to Run (Windows VSCode)
+
+### Step 1: Open in VSCode
+
+- Open VSCode
+- File → Open Folder → Select `Quiz_management_app_21f3000201`
+
+### Step 2: Install Dependencies
+
+Open VSCode terminal (Ctrl + `) and run:
+
+```bash
+# Install backend
+cd backend
+pip install -r requirements.txt
+cd ..
+
+# Install frontend
+cd frontend
+npm install
+cd ..
+```
+
+### Step 3: Start Services (Open 5 terminals in VSCode)
+
+**Terminal 1 - Redis:**
+
+```bash
+.\Redis\redis-server.exe
+```
+
+**Terminal 2 - Backend:**
+
+```bash
+cd backend
+python run.py
+```
+
+**Terminal 3 - Frontend:**
+
+```bash
+cd frontend
+npm run dev
+```
+
+**Terminal 4 - Background Jobs:**
+
+```bash
+cd backend
+python -m celery -A app.celery_worker worker --loglevel=info --pool=solo
+```
+
+**Terminal 5 - Scheduled Tasks:**
+
+```bash
+cd backend
+python -m celery -A app.celery_worker beat --loglevel=info
+```
+
+## Access Application
+
+- **Frontend**: http://localhost:8080
+- **Admin Login**: admin / Admin@123
+
+## What You Get
+
+### Admin Features
+
+- Create subjects, chapters, quizzes
+- Add multiple choice questions
+- View user analytics and charts
+- Export data to CSV
+
+### User Features
+
+- Register and take quizzes
+- View scores and progress
+- Personal dashboard
+
+### Background Jobs
+
+- Daily email reminders
+- Monthly performance reports
+- CSV export processing
 
 ## Technology Stack
 
-- **Backend**: Flask, SQLAlchemy, JWT, Celery, Redis
-- **Frontend**: Vue.js 3, Bootstrap 5, Chart.js
-- **Database**: SQLite
-- **Caching**: Redis
-- **Background Jobs**: Celery
+- **Backend**: Flask + SQLite + Redis + Celery
+- **Frontend**: Vue.js + Bootstrap
+- **Jobs**: Automatic emails and reports
 
-## Quick Start
+## Important Notes
 
-### Prerequisites
-
-- Python 3.8+
-- Node.js 16+
-- Redis Server
-
-### Installation
-
-1. **Backend Setup**
-
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   python run.py
-   ```
-
-2. **Frontend Setup** (in new terminal)
-
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-3. **Start Redis** (in new terminal)
-
-   ```bash
-   redis-server
-   ```
-
-4. **Start Celery Worker** (in new terminal)
-   ```bash
-   cd backend
-   celery -A app.celery_worker worker --loglevel=info
-   ```
-
-### Default Admin Credentials
-
-- Username: `admin`
-- Password: `Admin@123`
-
-## API Endpoints
-
-- `/api/auth/*` - Authentication
-- `/api/subjects/*` - Subject management
-- `/api/chapters/*` - Chapter management
-- `/api/quizzes/*` - Quiz management
-- `/api/questions/*` - Question management
-- `/api/scores/*` - Score management
-- `/api/dashboard` - Dashboard data
-- `/api/users/*` - User management
-- `/api/search` - Search functionality
-- `/api/export/*` - Data export
-
-## Development
-
-The application follows modern development practices:
-
-- Modular architecture
-- Separation of concerns
-- RESTful API design
-- Responsive UI design
-- Error handling and validation
-- Performance optimization with caching
+- Keep all 5 terminals running
+- Redis must start first
+- Default data is auto-created
+- CSV files saved in `exports/` folder
 
 ---
 
-**Modern Application Development II - IIT Madras BS Degree**
+**MAD II Project - Quiz Master V2 with Redis, Celery & Background Jobs**

@@ -329,6 +329,50 @@ class ApiService {
 
     return { message: 'CSV downloaded successfully' }
   }
+
+  // Background Jobs API
+  async startUserCSVExport() {
+    const response = await this.client.post('/jobs/export/user')
+    return response.data
+  }
+
+  async startAdminCSVExport() {
+    const response = await this.client.post('/jobs/export/admin')
+    return response.data
+  }
+
+  async getJobStatus(taskId) {
+    const response = await this.client.get(`/jobs/status/${taskId}`)
+    return response.data
+  }
+
+  async downloadCSV(filename) {
+    const response = await this.client.get(`/jobs/download/${filename}`, {
+      responseType: 'blob'
+    })
+
+    // Create download link
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+
+    return { message: 'CSV downloaded successfully' }
+  }
+
+  async triggerDailyReminders() {
+    const response = await this.client.post('/jobs/reminders/daily')
+    return response.data
+  }
+
+  async triggerMonthlyReports() {
+    const response = await this.client.post('/jobs/reports/monthly')
+    return response.data
+  }
 }
 
 export default new ApiService()

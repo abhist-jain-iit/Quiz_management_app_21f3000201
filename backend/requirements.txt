@@ -1,15 +1,27 @@
-flask
-flask_sqlalchemy
-flask_restful
-python-dotenv
-flask_jwt_extended
-flask-cors
-werkzeug
-requests
-redis
-celery
-flask-mail
-pandas
-openpyxl
-apscheduler
-flask-caching
+# Core Flask dependencies
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+Flask-RESTful==0.3.10
+Flask-JWT-Extended==4.5.3
+Flask-CORS==4.0.0
+Flask-Caching==2.1.0
+
+# Database and ORM
+SQLAlchemy==2.0.21
+
+# Background tasks and caching
+redis==5.0.1
+celery==5.3.4
+kombu==5.3.4
+
+# Email functionality
+Flask-Mail==0.9.1
+
+# Utilities
+python-dotenv==1.0.0
+requests==2.31.0
+Jinja2==3.1.2
+Werkzeug==2.3.7
+
+# Development and monitoring (optional)
+flower==2.0.1

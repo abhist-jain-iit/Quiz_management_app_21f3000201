@@ -18,11 +18,25 @@ class DashboardApi(Resource):
         current_user_id = get_jwt_identity()
         user = User.query.get(current_user_id)
 
-        # Temporarily disable caching to avoid issues
+        # Create cache key based on user and timestamp
+        cache_key = f"dashboard_{current_user_id}_{user.is_admin()}"
+
+        # Check if we should bypass cache (refresh request)
+        bypass_cache = request.args.get('_t') is not None
+
+        if not bypass_cache and hasattr(current_app, 'cache'):
+            cached_result = current_app.cache.get(cache_key)
+            if cached_result:
+                return cached_result
+
         if user.is_admin():
             result = self._get_admin_dashboard()
         else:
             result = self._get_user_dashboard(user)
+
+        # Cache the result for 2 minutes
+        if hasattr(current_app, 'cache'):
+            current_app.cache.set(cache_key, result, timeout=120)
 
         return result
     

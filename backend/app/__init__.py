@@ -14,6 +14,7 @@ from .auth import init_admin_user
 from .api.routes import init_api
 from .default_data import create_default_data
 from .celery_worker import make_celery
+from .cache import cache as redis_cache
 
 # Enable foreign key constraints for SQLite
 @event.listens_for(Engine, "connect")
@@ -38,16 +39,21 @@ def create_app(config_name='development'):
          methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
          supports_credentials=True)
 
-    # Initialize cache
+    # Initialize Redis cache
+    redis_cache.init_app(app)
+
+    # Initialize Flask-Caching as fallback
     try:
-        cache = Cache(app, config={
+        flask_cache = Cache(app, config={
             'CACHE_TYPE': 'RedisCache',
-            'CACHE_REDIS_URL': app.config.get('REDIS_URL', 'redis://localhost:6379/1'),
-            'CACHE_DEFAULT_TIMEOUT': 300
+            'CACHE_REDIS_URL': app.config.get('CACHE_REDIS_URL', 'redis://localhost:6379/1'),
+            'CACHE_DEFAULT_TIMEOUT': app.config.get('CACHE_DEFAULT_TIMEOUT', 300)
         })
-    except:
-        cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
-    app.cache = cache
+        app.logger.info("Flask-Caching initialized with Redis")
+    except Exception as e:
+        app.logger.warning(f"Redis cache failed, using SimpleCache: {e}")
+        flask_cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
+    app.flask_cache = flask_cache
 
     # Initialize Celery
     app.celery = make_celery(app)
