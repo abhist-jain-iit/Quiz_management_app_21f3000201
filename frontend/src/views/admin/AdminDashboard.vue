@@ -112,7 +112,7 @@
         </div>
 
         <div class="row g-4 mb-4" v-if="dashboardData">
-          <div class="col-md-3">
+          <div class="col-md-2">
             <div class="card bg-primary text-white">
               <div class="card-body text-center">
                 <h4>{{ dashboardData.statistics?.total_users || 0 }}</h4>
@@ -121,7 +121,7 @@
             </div>
           </div>
 
-          <div class="col-md-3">
+          <div class="col-md-2">
             <div class="card bg-success text-white">
               <div class="card-body text-center">
                 <h4>{{ dashboardData.statistics?.total_subjects || 0 }}</h4>
@@ -130,7 +130,16 @@
             </div>
           </div>
 
-          <div class="col-md-3">
+          <div class="col-md-2">
+            <div class="card bg-secondary text-white">
+              <div class="card-body text-center">
+                <h4>{{ dashboardData.statistics?.total_chapters || 0 }}</h4>
+                <p class="mb-0">Chapters</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-2">
             <div class="card bg-info text-white">
               <div class="card-body text-center">
                 <h4>{{ dashboardData.statistics?.total_quizzes || 0 }}</h4>
@@ -139,10 +148,18 @@
             </div>
           </div>
 
-          <div class="col-md-3">
+          <div class="col-md-2">
             <div class="card bg-warning text-white">
               <div class="card-body text-center">
-                <i class="bi bi-graph-up fs-1 mb-2"></i>
+                <h4>{{ dashboardData.statistics?.total_questions || 0 }}</h4>
+                <p class="mb-0">Questions</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-2">
+            <div class="card bg-danger text-white">
+              <div class="card-body text-center">
                 <h4>{{ dashboardData.statistics?.total_attempts || 0 }}</h4>
                 <p class="mb-0">Quiz Attempts</p>
               </div>

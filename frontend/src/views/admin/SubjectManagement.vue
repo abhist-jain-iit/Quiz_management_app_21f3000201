@@ -324,6 +324,9 @@ export default {
           params.search = searchQuery.value.trim();
         }
 
+        // Add timestamp for cache busting to get fresh data
+        params._t = Date.now();
+
         const response = await api.getSubjects(params);
         subjects.value = response;
       } catch (error) {

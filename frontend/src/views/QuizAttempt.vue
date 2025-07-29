@@ -556,14 +556,17 @@ export default {
           (Date.now() - startTime.value) / 1000
         );
 
-        // Convert to HH:MM format as expected by backend
-        // Ensure minimum of 1 minute for very quick submissions
-        const totalMinutes = Math.max(1, Math.floor(timeTakenSeconds / 60));
-        const hours = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
+        // Convert to HH:MM:SS format as expected by backend
+        // Ensure minimum of 1 second for very quick submissions
+        const totalSeconds = Math.max(1, timeTakenSeconds);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
         const timeTakenFormatted = `${hours
           .toString()
-          .padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+          .padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}`;
 
         // Convert answers to the format expected by backend
         // Backend expects {question_id: option_number} where option_number is 1,2,3,4

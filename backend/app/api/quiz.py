@@ -59,8 +59,11 @@ class QuizApi(Resource):
         except ValueError:
             return {'message': 'Invalid date format. Use YYYY-MM-DD'}, 400
         time_duration = data.get('time_duration').strip()
-        if ':' not in time_duration:
-            return {'message': 'Invalid time format. Use HH:MM'}, 400
+        # Validate HH:MM:SS format
+        import re
+        time_pattern = r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'
+        if not re.match(time_pattern, time_duration):
+            return {'message': 'Invalid time format. Use HH:MM:SS (e.g., 01:30:00)'}, 400
 
         try:
             new_quiz = Quiz(
@@ -106,11 +109,18 @@ class QuizApi(Resource):
         except ValueError:
             return {'message': 'Invalid date format. Use YYYY-MM-DD'}, 400
 
+        # Validate HH:MM:SS format
+        time_duration = data.get('time_duration').strip()
+        import re
+        time_pattern = r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'
+        if not re.match(time_pattern, time_duration):
+            return {'message': 'Invalid time format. Use HH:MM:SS (e.g., 01:30:00)'}, 400
+
         try:
             quiz.title = title
             quiz.chapter_id = data.get('chapter_id')
             quiz.date_of_quiz = quiz_date
-            quiz.time_duration = data.get('time_duration').strip()
+            quiz.time_duration = time_duration
             quiz.remarks = data.get('remarks', '').strip()
             quiz.is_active = data.get('is_active', quiz.is_active)
 

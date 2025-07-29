@@ -10,10 +10,13 @@ class Subject(BaseModel):
     chapters = db.relationship('Chapter', backref='subject', lazy='dynamic', cascade='all, delete-orphan')
     
     def convert_to_json(self):
+        from . import Chapter  # Import here to avoid circular imports
+        chapter_count = db.session.query(Chapter).filter_by(subject_id=self.id).count()
         return {
             'id': self.id,
             'name': self.name,
             'description': self.description,
+            'chapter_count': chapter_count,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

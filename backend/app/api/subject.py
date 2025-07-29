@@ -31,15 +31,17 @@ class SubjectApi(Resource):
                 return {'message': 'Subject does not exist.'}, 404
 
             search_query = request.args.get('search', '').strip()
+            bypass_cache = request.args.get('_t') is not None
             cache_key = f"subjects_list_{search_query}"
 
-            # Try to get from cache first
-            try:
-                cached_list = cache.get(cache_key)
-                if cached_list:
-                    return cached_list, 200
-            except Exception as e:
-                print(f"Cache get error: {e}")
+            # Try to get from cache first (unless bypassing)
+            if not bypass_cache:
+                try:
+                    cached_list = cache.get(cache_key)
+                    if cached_list:
+                        return cached_list, 200
+                except Exception as e:
+                    print(f"Cache get error: {e}")
 
             if search_query:
                 subjects = Subject.query.filter(Subject.name.ilike(f"%{search_query}%")).all()
@@ -48,13 +50,16 @@ class SubjectApi(Resource):
 
             subject_list = []
             for subject in subjects:
+                # Force fresh data by refreshing the object
+                db.session.refresh(subject)
                 subject_list.append(subject.convert_to_json())
 
-            # Cache subject list for 10 minutes
-            try:
-                cache.set(cache_key, subject_list, timeout=600)
-            except Exception as e:
-                print(f"Cache set error: {e}")
+            # Cache subject list for 10 minutes (unless bypassing)
+            if not bypass_cache:
+                try:
+                    cache.set(cache_key, subject_list, timeout=600)
+                except Exception as e:
+                    print(f"Cache set error: {e}")
 
             return subject_list, 200
 
