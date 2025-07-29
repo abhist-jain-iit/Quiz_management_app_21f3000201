@@ -1,205 +1,161 @@
 # Quiz Master V2 - MAD II Project
 
-Complete quiz management application with Flask API, Vue.js frontend, Redis caching, and Celery background jobs.
+Modern quiz management application built with Flask API, Vue.js frontend, Redis caching, and Celery background jobs.
 
 ## Technology Stack
 
-**Backend:** Flask, SQLAlchemy, JWT, Redis, Celery, SQLite
-**Frontend:** Vue.js 3, Bootstrap 5, Chart.js, Axios
+- **Backend:** Flask, SQLAlchemy, JWT, Redis, Celery, SQLite
+- **Frontend:** Vue.js 3, Bootstrap 5, Chart.js, Axios
+- **Database:** SQLite
+- **Caching:** Redis
+- **Background Jobs:** Celery
 
 ## Prerequisites
 
-- [Python 3.8+](https://python.org/downloads)
-- [Node.js 16+](https://nodejs.org/download)
-- [Redis Server](https://github.com/microsoftarchive/redis/releases)
-- [Git](https://git-scm.com/downloads)
+- Python 3.8+
+- Node.js 16+
+- Redis Server
+- Git
 
-## Quick Setup
+## Installation & Setup
 
-### 1. Install Dependencies
+### 1. Clone Repository
 
 ```bash
-# Backend
+git clone <repository-url>
+cd Quiz_management_app_21f3000201
+```
+
+### 2. Backend Setup
+
+```bash
 cd backend
 pip install -r requirements.txt
+```
 
-# Frontend
+### 3. Frontend Setup
+
+```bash
 cd frontend
 npm install
 ```
 
-### 2. Configure Environment
+### 4. Environment Configuration
 
-Create `backend/.env`:
+The `.env` file is already configured. Update if needed:
 
-```env
-SECRET_KEY=your-secret-key
-JWT_SECRET_KEY=your-jwt-key
-SMTP_SERVER=localhost
-SMTP_PORT=1025
-SMTP_USERNAME=
-SMTP_PASSWORD=
-```
-
-### 3. Download Required Tools
+### 5. Download Required Tools
 
 - **Redis:** Download [Redis for Windows](https://github.com/microsoftarchive/redis/releases/download/win-3.0.504/Redis-x64-3.0.504.zip) and extract to project root
 - **MailHog:** Download [MailHog](https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_windows_amd64.exe) and rename to `mailhog.exe`
 
-## Quick Start Guide
-
-### Step 1: Clone and Setup
-
-```bash
-# Clone repository
-git clone <repository-url>
-cd Quiz_management_app_21f3000201
-
-# Setup environment
-cd backend
-copy .env.example .env  # Windows
-# cp .env.example .env  # Linux/Mac
-```
-
-### Step 2: Install Dependencies
-
-```bash
-# Install backend dependencies
-cd backend
-pip install -r requirements.txt
-cd ..
-
-# Install frontend dependencies
-cd frontend
-npm install
-cd ..
-```
-
 ## Running the Application
 
-Open 6 terminals and run:
+**You need to run 5 servers in separate terminals:**
 
-**Terminal 1: Redis**
+### Terminal 1: Redis Server
 
 ```bash
 .\Redis-x64-3.0.504\redis-server.exe
 ```
 
-**Terminal 2: MailHog**
+### Terminal 2: MailHog (Email Testing)
 
 ```bash
 .\mailhog.exe
 ```
 
-**Terminal 3: Backend**
+### Terminal 3: Flask Backend API
 
 ```bash
-cd backend && python run.py
+cd backend
+python run.py
 ```
 
-_Note: Minimal logging - only shows server startup and errors_
-
-**Terminal 4: Frontend**
+### Terminal 4: Vue.js Frontend
 
 ```bash
-cd frontend && npm run dev
+cd frontend
+npm run dev
 ```
 
-**Terminal 5: Celery Worker**
+### Terminal 5: Celery Worker (Background Jobs)
 
 ```bash
 cd backend && python -m celery -A app.celery_worker worker --loglevel=info --pool=solo
 ```
 
-**Terminal 6: Celery Beat**
+### Optional: Celery Beat (Scheduled Jobs)
 
 ```bash
-cd backend && python -m celery -A app.celery_worker beat --loglevel=info
+cd backend
+python -m celery -A app.celery_worker beat --loglevel=info
 ```
 
 ## Access Points
 
-- **Frontend:** http://localhost:8080 (Vue.js UI)
-- **Backend API:** http://localhost:5000 (Flask API)
-- **MailHog Web UI:** http://localhost:8025 (Email Testing)
-- **Redis:** localhost:6379 (Caching & Celery Broker)
+- **Frontend:** http://localhost:8080
+- **Backend API:** http://localhost:5000
+- **MailHog:** http://localhost:8025
+- **Redis:** localhost:6379
 
-## Default Login
+## Default Login Credentials
 
-**Admin Account:**
+**Admin:**
 
 - Email: admin@quizmaster.com
 - Password: Admin@123
 
-## Email Testing with MailHog
+**Test Student:**
 
-MailHog captures all emails sent by the application for testing:
+- Email: dummy@example.com
+- Password: dummy123
 
-1. **Download:** [MailHog v1.0.1](https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_windows_amd64.exe)
-2. **Rename:** Save as `mailhog.exe` in project root
-3. **Start MailHog:** `.\mailhog.exe` (runs on port 1025)
-4. **Access Web UI:** http://localhost:8025
-5. **View Emails:** All emails appear in MailHog interface
-6. **Configuration:** Already set in `.env` (SMTP: localhost:1025)
+## Testing Instructions
 
-## Testing Backend Jobs
+### 1. Basic Application Test
 
-**Prerequisites:** Start Redis and MailHog first
+1. Start all 5 servers as described above
+2. Open http://localhost:8080
+3. Login with admin credentials
+4. Create subjects, chapters, quizzes, and questions
+5. Login as student and attempt quizzes
+
+### 2. Background Jobs Test
 
 ```bash
-# Test email (check MailHog at http://localhost:8025)
 cd backend
-python -c "from app.tasks import send_email; print('✅ Email sent!' if send_email('test@example.com', 'Test Email', '<h1>Test successful!</h1>') else '❌ Email failed!')"
 
-# Test daily reminders (emails appear in MailHog every 5 minutes when Celery Beat is running)
-python -c "from app import create_app; from app.tasks import send_daily_reminders; app=create_app(); app.app_context().push(); print(send_daily_reminders())"
+# Test daily reminders
+python -c "from app.tasks import send_daily_reminders; print(send_daily_reminders())"
 
-# Test CSV export (files saved to backend/exports/)
-python -c "from app import create_app; from app.tasks import export_user_csv; app=create_app(); app.app_context().push(); print(export_user_csv())"
+# Test monthly reports
+python -c "from app.tasks import generate_monthly_reports; print(generate_monthly_reports())"
+
+# Test CSV export
+python -c "from app.tasks import export_user_csv; print(export_user_csv(None, 2))"
 ```
 
-**Automatic Jobs (when Celery Beat is running):**
+### 3. Email Testing
 
-- **Daily Reminders:** Every 5 minutes (for testing)
-- **Monthly Reports:** Every 10 minutes (for testing)
-- **File Cleanup:** Every 15 minutes (for testing)
+- All emails are captured by MailHog
+- View emails at http://localhost:8025
+- No real emails are sent during testing
 
-## Features
+## Core Features
 
-- **User Management:** Registration, authentication, role-based access
-- **Quiz System:** Interactive quizzes with timer and scoring
-- **Admin Panel:** Complete CRUD operations for content management
-- **Background Jobs:** Daily reminders, monthly reports, CSV exports
-- **Performance:** Redis caching, optimized queries
-- **Analytics:** Charts and statistics with Chart.js
-
-## API Endpoints
-
-```bash
-# Authentication
-POST /api/auth/login
-POST /api/auth/register
-
-# Dashboard
-GET /api/dashboard
-
-# Quiz Management
-GET /api/subjects
-POST /api/subjects
-GET /api/quizzes
-POST /api/quiz/attempt
-
-# Background Jobs
-POST /api/jobs/export/user
-POST /api/jobs/export/admin
-```
+- User registration and authentication
+- Admin dashboard with full CRUD operations
+- Interactive quiz system with timer
+- Automatic background jobs (reminders, reports, exports)
+- Redis caching for performance
+- Responsive Bootstrap UI
 
 ## Troubleshooting
 
 **Redis Connection Error:**
 
-- Ensure Redis server is running
-- Check port 6379 availability
+- Ensure Redis server is running on port 6379
 
 **Celery Worker Issues:**
 
@@ -216,22 +172,21 @@ POST /api/jobs/export/admin
 - Run `npm install` if dependencies missing
 - Check port 8080 availability
 
-## MAD II Requirements Compliance
+## MAD II Requirements ✅
 
-- Flask API Backend
-- Vue.js Frontend
-- SQLite Database
-- Redis Caching
-- Celery Background Jobs
-- Daily Reminders via Email
-- Monthly HTML Reports
-- CSV Export Functionality
-- Performance Caching with Expiry
-- Bootstrap Styling
-- Chart.js Integration
-- Responsive Design
-- Form Validation
+✅ Flask API Backend
+✅ Vue.js Frontend
+✅ SQLite Database
+✅ Redis Caching
+✅ Celery Background Jobs
+✅ Daily Reminders via Email
+✅ Monthly HTML Reports
+✅ CSV Export Functionality
+✅ Bootstrap Styling
+✅ Chart.js Integration
+✅ Responsive Design
+✅ Form Validation
 
 ---
 
-**Quiz Master V2 - Complete MAD II Project**
+**Quiz Master V2 - Complete MAD II Project Implementation**
