@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Redis caching configuration for Quiz Master V2
-Provides caching for dashboard data, quiz data, and API responses
-"""
-
 import redis
 import json
 import pickle
@@ -107,13 +101,6 @@ class RedisCache:
 
 # Cache decorator for functions
 def cached(timeout=300, key_prefix=''):
-    """
-    Decorator to cache function results
-    
-    Args:
-        timeout: Cache timeout in seconds (default 5 minutes)
-        key_prefix: Prefix for cache key
-    """
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):

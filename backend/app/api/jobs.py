@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Background Jobs API for Quiz Master V2
-Handles CSV exports and job status tracking
-"""
-
 from flask import request, jsonify, current_app, send_file
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
