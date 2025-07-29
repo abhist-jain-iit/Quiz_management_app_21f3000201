@@ -39,22 +39,22 @@ celery = make_celery()
 
 # Configure scheduled tasks
 celery.conf.beat_schedule = {
-    # Daily reminders at 6 PM every day
+    # Daily reminders at 8:48 PM IST every day
     'send-daily-reminders': {
         'task': 'app.tasks.send_daily_reminders',
-        'schedule': crontab(hour=20, minute=38),  # 8:38 PM daily
+        'schedule': crontab(hour=20, minute=48),  # 8:48 PM IST daily
     },
 
-    # Monthly reports on 1st of every month at 9 AM
+    # Monthly reports on 1st of every month at 9 AM IST
     'generate-monthly-reports': {
         'task': 'app.tasks.generate_monthly_reports',
-        'schedule': crontab(hour=9, minute=0, day_of_month=1),  # 1st of month at 9 AM
+        'schedule': crontab(hour=9, minute=0, day_of_month=1),  # 1st of month at 9 AM IST
     },
 
     # Clean up old task results every week
     'cleanup-old-results': {
         'task': 'app.tasks.cleanup_old_results',
-        'schedule': crontab(hour=2, minute=0, day_of_week=1),  # Monday 2 AM
+        'schedule': crontab(hour=2, minute=0, day_of_week=1),  # Monday 2 AM IST
     },
 }
 
@@ -63,8 +63,8 @@ celery.conf.update(
     task_serializer='json',
     accept_content=['json'],
     result_serializer='json',
-    timezone='UTC',
-    enable_utc=True,
+    timezone='Asia/Kolkata',  # Indian Standard Time
+    enable_utc=False,
     task_track_started=True,
     task_time_limit=30 * 60,  # 30 minutes
     task_soft_time_limit=25 * 60,  # 25 minutes
