@@ -9,7 +9,7 @@ class Score(BaseModel):
     time_stamp_of_attempt = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     total_scored = db.Column(db.Integer, nullable=False, default=0)
     total_questions = db.Column(db.Integer, nullable=False)
-    time_taken = db.Column(db.String(5))  # Actual time taken to complete in HH:MM format
+    time_taken = db.Column(db.String(8))  # Actual time taken to complete in HH:MM:SS format
     
     # Unique constraint to prevent multiple attempts (if needed)
     # __table_args__ = (db.UniqueConstraint('quiz_id', 'user_id'),)

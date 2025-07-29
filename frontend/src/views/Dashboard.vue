@@ -513,8 +513,16 @@ export default {
       return `${correctAnswers}/${score.total_questions}`;
     };
 
+    // Refresh dashboard when window gains focus (user returns from quiz)
+    const handleWindowFocus = () => {
+      console.log("Window focused, refreshing dashboard...");
+      loadDashboard();
+    };
+
     onMounted(() => {
       loadDashboard();
+      // Add focus event listener to refresh data when user returns
+      window.addEventListener("focus", handleWindowFocus);
     });
 
     onUnmounted(() => {
@@ -527,6 +535,8 @@ export default {
         subjectChart.destroy();
         subjectChart = null;
       }
+      // Remove focus event listener
+      window.removeEventListener("focus", handleWindowFocus);
     });
 
     return {

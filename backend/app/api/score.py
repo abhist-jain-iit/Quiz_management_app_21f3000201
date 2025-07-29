@@ -83,19 +83,19 @@ class ScoreApi(Resource):
             if user_answer and user_answer == question.correct_option:
                 total_scored += question.marks
         
-        # Validate time taken format
+        # Validate time taken format (HH:MM:SS)
         time_taken = data.get('time_taken').strip()
         try:
             time_parts = time_taken.split(':')
-            if len(time_parts) != 2:
-                return {'message': 'Invalid time format. Use HH:MM'}, 400
-            hours, minutes = int(time_parts[0]), int(time_parts[1])
-            if hours < 0 or hours > 23 or minutes < 0 or minutes > 59:
+            if len(time_parts) != 3:
+                return {'message': 'Invalid time format. Use HH:MM:SS'}, 400
+            hours, minutes, seconds = int(time_parts[0]), int(time_parts[1]), int(time_parts[2])
+            if hours < 0 or hours > 23 or minutes < 0 or minutes > 59 or seconds < 0 or seconds > 59:
                 return {'message': 'Invalid time values'}, 400
-            # Store as string in HH:MM format
-            time_taken = f"{hours:02d}:{minutes:02d}"
+            # Store as string in HH:MM:SS format
+            time_taken = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
         except (ValueError, IndexError):
-            return {'message': 'Invalid time format. Use HH:MM'}, 400
+            return {'message': 'Invalid time format. Use HH:MM:SS'}, 400
         
         # Create score record
         new_score = Score(
@@ -108,7 +108,18 @@ class ScoreApi(Resource):
         
         db.session.add(new_score)
         db.session.commit()
-        
+
+        # Clear dashboard cache to ensure fresh statistics
+        try:
+            from flask import current_app
+            if hasattr(current_app, 'cache'):
+                # Clear user's dashboard cache
+                cache_key = f"dashboard_{current_user_id}_False"  # False for non-admin
+                current_app.cache.delete(cache_key)
+                print(f"Cleared dashboard cache for user {current_user_id}")
+        except Exception as e:
+            print(f"Cache clear error: {e}")
+
         return new_score.convert_to_json(), 201
 
 class QuizAttemptApi(Resource):
