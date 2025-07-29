@@ -5,17 +5,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 def create_default_data():
-    # Create default test data for the application.
     try:
-        logger.info("Initializing default data for Quiz Master V2...")
-        
-        # Check if data already exists
-        if User.query.count() > 1:  # More than just admin user
-            logger.info("Default data already exists, skipping initialization")
+        if User.query.count() > 1:
             return
-        
-        # 1. Create dummy user
-        logger.info("Creating dummy user...")
         dummy_user = User.query.filter_by(username='dummy').first()
         if not dummy_user:
             user_role = Role.query.filter_by(name='user').first()
@@ -33,10 +25,7 @@ def create_default_data():
             
             db.session.add(dummy_user)
             db.session.commit()
-            logger.info("Dummy user created (username: dummy, password: dummy123)")
-        
-        # 2. Create test subject
-        logger.info("Creating default subject...")
+
         subject = Subject.query.filter_by(name='Computer Science Fundamentals').first()
         if not subject:
             subject = Subject(
@@ -45,7 +34,6 @@ def create_default_data():
             )
             db.session.add(subject)
             db.session.commit()
-            logger.info("Subject created: Computer Science Fundamentals")
         
         # 3. Create test chapter
         logger.info("Creating default chapter...")

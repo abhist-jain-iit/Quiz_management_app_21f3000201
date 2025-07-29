@@ -5,11 +5,11 @@ from .celery_worker import celery
 celery.conf.beat_schedule = {
     'send-daily-reminders': {
         'task': 'app.tasks.send_daily_reminders',
-        'schedule': crontab(hour=18, minute=0),  # Daily at 6 PM
+        'schedule': crontab(hour=20, minute=38),  # 8:38 PM IST daily
     },
     'generate-monthly-reports': {
         'task': 'app.tasks.generate_monthly_reports',
-        'schedule': crontab(day_of_month=1, hour=9, minute=0),  # 1st of every month at 9 AM
+        'schedule': crontab(day_of_month=1, hour=9, minute=0),  # 1st of month at 9 AM
     },
     'cleanup-old-files': {
         'task': 'app.tasks.cleanup_old_results',
@@ -17,4 +17,4 @@ celery.conf.beat_schedule = {
     },
 }
 
-celery.conf.timezone = 'UTC'
+celery.conf.timezone = 'Asia/Kolkata'  # Indian Standard Time

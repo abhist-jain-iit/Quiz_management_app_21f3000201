@@ -31,9 +31,6 @@ def make_celery(app=None):
                     return self.run(*args, **kwargs)
 
         celery.Task = ContextTask
-        logger.info("Celery configured with Flask app context")
-    else:
-        logger.info("Celery configured without Flask app context")
 
     return celery
 
@@ -45,7 +42,7 @@ celery.conf.beat_schedule = {
     # Daily reminders at 6 PM every day
     'send-daily-reminders': {
         'task': 'app.tasks.send_daily_reminders',
-        'schedule': crontab(hour=18, minute=0),  # 6:00 PM daily
+        'schedule': crontab(hour=20, minute=38),  # 8:38 PM daily
     },
 
     # Monthly reports on 1st of every month at 9 AM

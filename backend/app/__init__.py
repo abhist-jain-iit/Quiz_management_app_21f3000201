@@ -38,6 +38,9 @@ def create_app(config_name='development'):
     redis_cache.init_app(app)
 
     try:
+        import redis
+        redis_client = redis.Redis(host='localhost', port=6379, db=1, socket_connect_timeout=1)
+        redis_client.ping()
         flask_cache = Cache(app, config={
             'CACHE_TYPE': 'RedisCache',
             'CACHE_REDIS_URL': app.config.get('CACHE_REDIS_URL', 'redis://localhost:6379/1'),

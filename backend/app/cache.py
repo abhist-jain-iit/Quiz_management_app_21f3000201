@@ -19,20 +19,14 @@ class RedisCache:
         try:
             self.redis_client = redis.from_url(
                 redis_url,
-                decode_responses=False,  # We'll handle encoding ourselves
-                socket_connect_timeout=5,
-                socket_timeout=5,
-                retry_on_timeout=True,
-                health_check_interval=30  # Health check every 30 seconds
+                decode_responses=False,
+                socket_connect_timeout=2,
+                socket_timeout=2,
+                retry_on_timeout=False
             )
-
-            # Test connection
             self.redis_client.ping()
-            app.logger.info(f"Redis cache connected successfully to {redis_url}")
 
-        except Exception as e:
-            app.logger.error(f"Redis cache connection failed: {e}")
-            app.logger.warning("Falling back to in-memory cache")
+        except Exception:
             self.redis_client = None
 
         app.cache = self
@@ -47,8 +41,7 @@ class RedisCache:
             if value:
                 return pickle.loads(value)
             return None
-        except Exception as e:
-            current_app.logger.error(f"Cache get error for key {key}: {e}")
+        except Exception:
             return None
     
     def set(self, key, value, timeout=300):
@@ -59,8 +52,7 @@ class RedisCache:
         try:
             serialized_value = pickle.dumps(value)
             return self.redis_client.setex(key, timeout, serialized_value)
-        except Exception as e:
-            current_app.logger.error(f"Cache set error for key {key}: {e}")
+        except Exception:
             return False
     
     def delete(self, key):
@@ -70,8 +62,7 @@ class RedisCache:
         
         try:
             return self.redis_client.delete(key)
-        except Exception as e:
-            current_app.logger.error(f"Cache delete error for key {key}: {e}")
+        except Exception:
             return False
     
     def clear_pattern(self, pattern):
