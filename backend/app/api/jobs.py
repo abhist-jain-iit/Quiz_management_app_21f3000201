@@ -101,38 +101,4 @@ class DownloadCSVApi(Resource):
         except Exception as e:
             return {'message': f'Failed to download file: {str(e)}'}, 500
 
-class TriggerDailyRemindersApi(Resource):
-    @jwt_required()
-    @admin_required
-    def post(self):
-        """Manually trigger daily reminders (for testing)"""
-        try:
-            from ..tasks import send_daily_reminders
-            task = send_daily_reminders.delay()
-            
-            return {
-                'message': 'Daily reminders job started',
-                'task_id': task.id,
-                'status': 'PENDING'
-            }, 202
-            
-        except Exception as e:
-            return {'message': f'Failed to start reminders: {str(e)}'}, 500
 
-class TriggerMonthlyReportsApi(Resource):
-    @jwt_required()
-    @admin_required
-    def post(self):
-        """Manually trigger monthly reports (for testing)"""
-        try:
-            from ..tasks import generate_monthly_reports
-            task = generate_monthly_reports.delay()
-            
-            return {
-                'message': 'Monthly reports job started',
-                'task_id': task.id,
-                'status': 'PENDING'
-            }, 202
-            
-        except Exception as e:
-            return {'message': f'Failed to start reports: {str(e)}'}, 500

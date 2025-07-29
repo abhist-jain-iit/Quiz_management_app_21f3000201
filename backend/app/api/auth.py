@@ -7,19 +7,18 @@ from ..auth import authenticate_user, create_tokens
 
 class LoginApi(Resource):
     def post(self):
-        """User login endpoint"""
         data = request.get_json()
-        
+
         if not data or not data.get('username') or not data.get('password'):
             return {'message': 'Username and password required'}, 400
-        
+
         user = authenticate_user(data['username'], data['password'])
-        
+
         if not user:
             return {'message': 'Invalid credentials'}, 401
-        
+
         access_token, refresh_token = create_tokens(user)
-        
+
         return {
             'message': 'Login successful',
             'access_token': access_token,
@@ -29,7 +28,6 @@ class LoginApi(Resource):
 
 class RegisterApi(Resource):
     def post(self):
-        """User registration endpoint"""
         data = request.get_json()
         
         required_fields = ['username', 'email', 'password', 'full_name']
@@ -37,14 +35,11 @@ class RegisterApi(Resource):
             if not data.get(field):
                 return {'message': f'{field} is required'}, 400
         
-        # Check if user already exists
         if User.query.filter_by(username=data['username']).first():
             return {'message': 'Username already exists'}, 409
-        
+
         if User.query.filter_by(email=data['email']).first():
             return {'message': 'Email already exists'}, 409
-        
-        # Convert date_of_birth string to Date object if provided
         date_of_birth = None
         if data.get('date_of_birth'):
             try:

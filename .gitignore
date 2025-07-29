@@ -271,8 +271,6 @@ uploads/
 celerybeat-schedule*
 dump.rdb
 
-# Redis files (keep only executables)
-Redis/*.dll
-Redis/*.docx
-Redis/*.pdb
-Redis/*.conf
+# Redis files
+Redis-x64-*/
+dump.rdb

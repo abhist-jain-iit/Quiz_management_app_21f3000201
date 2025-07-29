@@ -9,28 +9,22 @@ from email.mime.base import MIMEBase
 from email import encoders
 from datetime import datetime, timedelta
 import requests
-import json
-from jinja2 import Template
 import logging
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Email configuration (you should set these in environment variables)
-SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
-SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
-SMTP_USERNAME = os.environ.get('SMTP_USERNAME', 'your-email@gmail.com')
-SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', 'your-app-password')
+SMTP_SERVER = os.environ.get('SMTP_SERVER', 'localhost')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', '1025'))
+SMTP_USERNAME = os.environ.get('SMTP_USERNAME', '')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
 
-# Google Chat Webhook URL (optional)
 GOOGLE_CHAT_WEBHOOK = os.environ.get('GOOGLE_CHAT_WEBHOOK', '')
 
 def send_email(to_email, subject, body, attachment_path=None):
-    """Send email with optional attachment"""
     try:
         msg = MIMEMultipart()
-        msg['From'] = SMTP_USERNAME
+        msg['From'] = SMTP_USERNAME or 'noreply@quizmaster.com'
         msg['To'] = to_email
         msg['Subject'] = subject
 
@@ -48,20 +42,19 @@ def send_email(to_email, subject, body, attachment_path=None):
                 msg.attach(part)
 
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
-        server.login(SMTP_USERNAME, SMTP_PASSWORD)
+        if SMTP_USERNAME and SMTP_PASSWORD:
+            server.starttls()
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
         text = msg.as_string()
-        server.sendmail(SMTP_USERNAME, to_email, text)
+        server.sendmail(msg['From'], to_email, text)
         server.quit()
         return True
     except Exception as e:
-        print(f"Failed to send email to {to_email}: {str(e)}")
+        logger.error(f"Failed to send email to {to_email}: {str(e)}")
         return False
 
 def send_google_chat_message(message):
-    """Send message to Google Chat via webhook"""
     if not GOOGLE_CHAT_WEBHOOK:
-        print("Google Chat webhook not configured")
         return False
 
     try:
@@ -69,42 +62,30 @@ def send_google_chat_message(message):
         response = requests.post(GOOGLE_CHAT_WEBHOOK, json=payload)
         return response.status_code == 200
     except Exception as e:
-        print(f"Failed to send Google Chat message: {str(e)}")
+        logger.error(f"Failed to send Google Chat message: {str(e)}")
         return False
-
-# Daily reminder task
 @celery.task(bind=True)
 def send_daily_reminders(self):
-    """Send daily reminders to inactive users"""
     try:
-        logger.info("Starting daily reminders task")
-
         from app import create_app
         from app.models import User, Score, Quiz
 
         app = create_app()
         with app.app_context():
-            # Find active users (excluding admins)
             users = User.query.filter_by(is_active=True).all()
             total_users = len(users)
             reminder_count = 0
-            error_count = 0
-
-            logger.info(f"Processing {total_users} users for daily reminders")
 
             for i, user in enumerate(users):
                 try:
                     if user.is_admin():
-                        continue  # Skip admin users
+                        continue
 
-                    # Update task progress
-                    progress = int((i + 1) / total_users * 100)
                     self.update_state(
                         state='PROGRESS',
                         meta={'current': i + 1, 'total': total_users, 'status': f'Processing user {user.email}'}
                     )
 
-                    # Check last quiz attempt
                     last_score = Score.query.filter_by(user_id=user.id).order_by(Score.time_stamp_of_attempt.desc()).first()
                     should_send_reminder = False
                     reason = ""
@@ -768,8 +749,9 @@ def generate_html_report(user, report_data, month_date):
 
     # Format the current datetime outside the f-string to avoid % character issues
     current_time = datetime.now().strftime('%B %d, %Y at %I:%M %p')
+    br_tag = '<br>'
 
-    return f"""
+    html_content = f"""
     <!DOCTYPE html>
     <html>
     <head>
@@ -830,9 +812,9 @@ def generate_html_report(user, report_data, month_date):
             <div class="content">
                 <div class="highlight">
                     <strong>Performance Insight:</strong>
-                    {'Excellent work! You\'re performing above average.' if report_data['average_percentage'] >= 70
+                    {'Excellent work! You are performing above average.' if report_data['average_percentage'] >= 70
                      else 'Good progress! Keep practicing to improve your scores.' if report_data['average_percentage'] >= 50
-                     else 'There\'s room for improvement. Consider reviewing the topics and practicing more.'}
+                     else 'There is room for improvement. Consider reviewing the topics and practicing more.'}
                 </div>
 
                 <h3>Detailed Quiz History</h3>
@@ -863,7 +845,7 @@ def generate_html_report(user, report_data, month_date):
             <div class="footer">
                 <p>Keep learning, keep growing! Your dedication to continuous improvement is commendable.</p>
                 <p style="font-size: 12px; margin-top: 15px;">
-                    This report was automatically generated by Quiz Master V2<br>
+                    This report was automatically generated by Quiz Master V2{br_tag}
                     Generated on {current_time}
                 </p>
             </div>
@@ -871,6 +853,8 @@ def generate_html_report(user, report_data, month_date):
     </body>
     </html>
     """
+
+    return html_content
 
 def send_monthly_report_email(user, html_report, month_date):
     """Send monthly report via email"""

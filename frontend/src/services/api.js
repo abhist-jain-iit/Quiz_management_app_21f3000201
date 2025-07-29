@@ -364,15 +364,7 @@ class ApiService {
     return { message: 'CSV downloaded successfully' }
   }
 
-  async triggerDailyReminders() {
-    const response = await this.client.post('/jobs/reminders/daily')
-    return response.data
-  }
 
-  async triggerMonthlyReports() {
-    const response = await this.client.post('/jobs/reports/monthly')
-    return response.data
-  }
 }
 
 export default new ApiService()

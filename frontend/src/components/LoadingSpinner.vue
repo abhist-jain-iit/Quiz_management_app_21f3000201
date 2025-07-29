@@ -1,5 +1,5 @@
 <template>
-  <div class="loading-container" :class="{ 'overlay': overlay }">
+  <div class="loading-container" :class="{ overlay: overlay }">
     <div class="loading-content">
       <div class="spinner-border" :class="spinnerClass" role="status">
         <span class="visually-hidden">Loading...</span>
@@ -17,36 +17,46 @@ export default {
   props: {
     overlay: {
       type: Boolean,
-      default: false
+      default: false,
     },
     message: {
       type: String,
-      default: ""
+      default: "",
     },
     size: {
       type: String,
       default: "normal",
-      validator: (value) => ["small", "normal", "large"].includes(value)
+      validator: (value) => ["small", "normal", "large"].includes(value),
     },
     variant: {
       type: String,
       default: "primary",
-      validator: (value) => ["primary", "secondary", "success", "danger", "warning", "info", "light", "dark"].includes(value)
-    }
+      validator: (value) =>
+        [
+          "primary",
+          "secondary",
+          "success",
+          "danger",
+          "warning",
+          "info",
+          "light",
+          "dark",
+        ].includes(value),
+    },
   },
   computed: {
     spinnerClass() {
       const classes = [`text-${this.variant}`];
-      
+
       if (this.size === "small") {
         classes.push("spinner-border-sm");
       } else if (this.size === "large") {
         classes.push("spinner-border-lg");
       }
-      
+
       return classes.join(" ");
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -88,7 +98,6 @@ export default {
   height: 3rem;
 }
 
-/* Smooth animation */
 .spinner-border {
   animation: spinner-border 0.75s linear infinite;
 }

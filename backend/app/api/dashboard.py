@@ -14,14 +14,10 @@ from ..database import db
 class DashboardApi(Resource):
     @jwt_required()
     def get(self):
-        """Get comprehensive dashboard data"""
         current_user_id = get_jwt_identity()
         user = User.query.get(current_user_id)
 
-        # Create cache key based on user and timestamp
         cache_key = f"dashboard_{current_user_id}_{user.is_admin()}"
-
-        # Check if we should bypass cache (refresh request)
         bypass_cache = request.args.get('_t') is not None
 
         if not bypass_cache and hasattr(current_app, 'cache'):
@@ -34,15 +30,12 @@ class DashboardApi(Resource):
         else:
             result = self._get_user_dashboard(user)
 
-        # Cache the result for 2 minutes
         if hasattr(current_app, 'cache'):
             current_app.cache.set(cache_key, result, timeout=120)
 
         return result
     
     def _get_admin_dashboard(self):
-        """Admin dashboard with comprehensive statistics"""
-        # Basic counts
         total_users = User.query.filter_by(is_active=True).count()
         total_subjects = Subject.query.count()
         total_chapters = Chapter.query.count()

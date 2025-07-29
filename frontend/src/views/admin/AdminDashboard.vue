@@ -27,13 +27,9 @@
           </div>
         </div>
 
-        <!-- Quick Actions -->
         <div class="card mb-4">
           <div class="card-header">
-            <h5 class="mb-0">
-              <i class="bi bi-lightning-charge me-2"></i>
-              Quick Actions
-            </h5>
+            <h5 class="mb-0">Quick Actions</h5>
           </div>
           <div class="card-body">
             <div class="row g-3">
@@ -95,77 +91,30 @@
           </div>
         </div>
 
-        <!-- Background Jobs Testing -->
         <div class="card mb-4">
           <div class="card-header">
-            <h5 class="mb-0">
-              <i class="bi bi-gear-wide-connected me-2"></i>
-              Background Jobs Testing
-            </h5>
+            <h5 class="mb-0">Data Export</h5>
           </div>
           <div class="card-body">
             <div class="row g-3">
-              <div class="col-md-4">
+              <div class="col-md-6 mx-auto">
                 <button
-                  class="btn btn-outline-warning w-100 d-flex flex-column align-items-center justify-content-center py-3"
-                  @click="triggerDailyReminders"
-                  :disabled="reminderJobRunning"
+                  class="btn btn-outline-success w-100 d-flex flex-column align-items-center justify-content-center py-3"
+                  @click="exportData"
                 >
-                  <span
-                    v-if="reminderJobRunning"
-                    class="spinner-border spinner-border-sm mb-2"
-                  ></span>
-                  <i v-else class="bi bi-bell fs-3 mb-2"></i>
-                  <span>Test Daily Reminders</span>
-                  <small class="text-muted mt-1"
-                    >Send reminders to inactive users</small
-                  >
+                  <i class="bi bi-download fs-3 mb-2"></i>
+                  <span>Export Data</span>
+                  <small class="text-muted mt-1">Download CSV reports</small>
                 </button>
-              </div>
-              <div class="col-md-4">
-                <button
-                  class="btn btn-outline-info w-100 d-flex flex-column align-items-center justify-content-center py-3"
-                  @click="triggerMonthlyReports"
-                  :disabled="reportJobRunning"
-                >
-                  <span
-                    v-if="reportJobRunning"
-                    class="spinner-border spinner-border-sm mb-2"
-                  ></span>
-                  <i v-else class="bi bi-file-earmark-text fs-3 mb-2"></i>
-                  <span>Test Monthly Reports</span>
-                  <small class="text-muted mt-1"
-                    >Generate monthly activity reports</small
-                  >
-                </button>
-              </div>
-              <div class="col-md-4">
-                <div class="card border-info">
-                  <div class="card-body text-center p-3">
-                    <i class="bi bi-info-circle fs-4 text-info mb-2"></i>
-                    <h6 class="mb-1">Job Status</h6>
-                    <div v-if="lastJobResult" class="small">
-                      <div class="text-success" v-if="lastJobResult.success">
-                        ✓ {{ lastJobResult.message }}
-                      </div>
-                      <div class="text-danger" v-else>
-                        ✗ {{ lastJobResult.message }}
-                      </div>
-                    </div>
-                    <div v-else class="text-muted small">No recent jobs</div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Stats Cards -->
         <div class="row g-4 mb-4" v-if="dashboardData">
           <div class="col-md-3">
             <div class="card bg-primary text-white">
               <div class="card-body text-center">
-                <i class="bi bi-people fs-1 mb-2"></i>
                 <h4>{{ dashboardData.statistics?.total_users || 0 }}</h4>
                 <p class="mb-0">Total Users</p>
               </div>
@@ -175,7 +124,6 @@
           <div class="col-md-3">
             <div class="card bg-success text-white">
               <div class="card-body text-center">
-                <i class="bi bi-journal-text fs-1 mb-2"></i>
                 <h4>{{ dashboardData.statistics?.total_subjects || 0 }}</h4>
                 <p class="mb-0">Subjects</p>
               </div>
@@ -185,7 +133,6 @@
           <div class="col-md-3">
             <div class="card bg-info text-white">
               <div class="card-body text-center">
-                <i class="bi bi-clipboard-check fs-1 mb-2"></i>
                 <h4>{{ dashboardData.statistics?.total_quizzes || 0 }}</h4>
                 <p class="mb-0">Quizzes</p>
               </div>
@@ -417,11 +364,6 @@ export default {
     const recentUsers = ref([]);
     const recentAttempts = ref([]);
 
-    // Background job testing states
-    const reminderJobRunning = ref(false);
-    const reportJobRunning = ref(false);
-    const lastJobResult = ref(null);
-
     // Chart instances for proper cleanup
     let userTrendChart = null;
     let performanceOverviewChart = null;
@@ -599,111 +541,6 @@ export default {
       return "bg-danger";
     };
 
-    // Background job testing functions
-    const triggerDailyReminders = async () => {
-      reminderJobRunning.value = true;
-      lastJobResult.value = null;
-
-      try {
-        console.log("Triggering daily reminders...");
-        const result = await api.triggerDailyReminders();
-        console.log("Daily reminders triggered:", result);
-
-        // Poll for job completion
-        if (result.task_id) {
-          await pollJobStatus(result.task_id, "Daily reminders");
-        } else {
-          lastJobResult.value = {
-            success: true,
-            message: "Daily reminders job started successfully",
-          };
-        }
-      } catch (error) {
-        console.error("Error triggering daily reminders:", error);
-        lastJobResult.value = {
-          success: false,
-          message: `Failed to trigger reminders: ${
-            error.response?.data?.message || error.message
-          }`,
-        };
-      } finally {
-        reminderJobRunning.value = false;
-      }
-    };
-
-    const triggerMonthlyReports = async () => {
-      reportJobRunning.value = true;
-      lastJobResult.value = null;
-
-      try {
-        console.log("Triggering monthly reports...");
-        const result = await api.triggerMonthlyReports();
-        console.log("Monthly reports triggered:", result);
-
-        // Poll for job completion
-        if (result.task_id) {
-          await pollJobStatus(result.task_id, "Monthly reports");
-        } else {
-          lastJobResult.value = {
-            success: true,
-            message: "Monthly reports job started successfully",
-          };
-        }
-      } catch (error) {
-        console.error("Error triggering monthly reports:", error);
-        lastJobResult.value = {
-          success: false,
-          message: `Failed to trigger reports: ${
-            error.response?.data?.message || error.message
-          }`,
-        };
-      } finally {
-        reportJobRunning.value = false;
-      }
-    };
-
-    const pollJobStatus = async (taskId, jobName) => {
-      const maxAttempts = 30; // 30 seconds max
-      let attempts = 0;
-
-      const poll = async () => {
-        try {
-          const status = await api.getJobStatus(taskId);
-          console.log(`${jobName} status:`, status);
-
-          if (status.state === "SUCCESS") {
-            lastJobResult.value = {
-              success: true,
-              message: `${jobName} completed successfully`,
-            };
-            return;
-          } else if (status.state === "FAILURE") {
-            lastJobResult.value = {
-              success: false,
-              message: `${jobName} failed: ${status.error || "Unknown error"}`,
-            };
-            return;
-          } else if (attempts < maxAttempts) {
-            attempts++;
-            setTimeout(poll, 1000); // Poll every second
-          } else {
-            lastJobResult.value = {
-              success: false,
-              message: `${jobName} timed out`,
-            };
-          }
-        } catch (error) {
-          console.error(`Error polling ${jobName} status:`, error);
-          lastJobResult.value = {
-            success: false,
-            message: `Error checking ${jobName} status`,
-          };
-        }
-      };
-
-      poll();
-    };
-
     onMounted(() => {
       loadDashboard();
     });
@@ -730,16 +567,11 @@ export default {
       dashboardData,
       recentUsers,
       recentAttempts,
-      reminderJobRunning,
-      reportJobRunning,
-      lastJobResult,
       loadDashboard,
       performSearch,
       exportData,
       formatDate,
       getScoreBadgeClass,
-      triggerDailyReminders,
-      triggerMonthlyReports,
     };
   },
 };

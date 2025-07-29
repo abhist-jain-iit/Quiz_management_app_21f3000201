@@ -1,12 +1,8 @@
 <template>
   <div id="app">
-    <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
       <div class="container">
-        <router-link class="navbar-brand" to="/">
-          <i class="bi bi-mortarboard-fill me-2"></i>
-          Quiz Master V2
-        </router-link>
+        <router-link class="navbar-brand" to="/"> Quiz Master V2 </router-link>
 
         <button
           class="navbar-toggler"
@@ -21,15 +17,12 @@
           <ul class="navbar-nav me-auto">
             <li class="nav-item" v-if="isAuthenticated && !isAdmin">
               <router-link class="nav-link" to="/dashboard">
-                <i class="bi bi-speedometer2 me-1"></i>
                 Dashboard
               </router-link>
             </li>
 
-            <!-- Admin Navigation - Always visible for admins -->
             <li class="nav-item" v-if="isAdmin">
               <router-link class="nav-link" to="/admin" active-class="active">
-                <i class="bi bi-speedometer2 me-1"></i>
                 Admin Dashboard
               </router-link>
             </li>

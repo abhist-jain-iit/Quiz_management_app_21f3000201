@@ -9,8 +9,7 @@ from .user import UserApi
 from .search import SearchApi
 from .dashboard import DashboardApi
 from .export import export_bp
-from .jobs import (UserCSVExportApi, AdminCSVExportApi, JobStatusApi,
-                   DownloadCSVApi, TriggerDailyRemindersApi, TriggerMonthlyReportsApi)
+from .jobs import (UserCSVExportApi, AdminCSVExportApi, JobStatusApi, DownloadCSVApi)
 
 def init_api(app):
     """Initialize API routes"""
@@ -53,8 +52,6 @@ def init_api(app):
     api.add_resource(AdminCSVExportApi, '/jobs/export/admin')
     api.add_resource(JobStatusApi, '/jobs/status/<string:task_id>')
     api.add_resource(DownloadCSVApi, '/jobs/download/<string:filename>')
-    api.add_resource(TriggerDailyRemindersApi, '/jobs/reminders/daily')
-    api.add_resource(TriggerMonthlyReportsApi, '/jobs/reports/monthly')
 
     app.register_blueprint(export_bp)
     
