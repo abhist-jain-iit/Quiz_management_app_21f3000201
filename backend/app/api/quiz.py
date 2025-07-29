@@ -55,44 +55,44 @@ class QuizApi(Resource):
             if chapter_id:
                 quizzes = quizzes.filter_by(chapter_id=chapter_id)
 
-        if is_active:
-            quizzes = quizzes.filter_by(is_active=is_active.lower() == 'true')
+            if is_active:
+                quizzes = quizzes.filter_by(is_active=is_active.lower() == 'true')
 
-        quizzes = quizzes.all()
+            quizzes = quizzes.all()
 
-        quiz_list = []
+            quiz_list = []
 
-        # Check if user is authenticated to include attempt count
-        try:
-            from flask_jwt_extended import verify_jwt_in_request
-            verify_jwt_in_request(optional=True)
-            current_user_id = get_jwt_identity()
-            include_attempts = current_user_id is not None
-        except Exception as e:
-            include_attempts = False
-            current_user_id = None
+            # Check if user is authenticated to include attempt count
+            try:
+                from flask_jwt_extended import verify_jwt_in_request
+                verify_jwt_in_request(optional=True)
+                current_user_id = get_jwt_identity()
+                include_attempts = current_user_id is not None
+            except Exception as e:
+                include_attempts = False
+                current_user_id = None
 
-        for quiz in quizzes:
-            quiz_data = quiz.convert_to_json()
+            for quiz in quizzes:
+                quiz_data = quiz.convert_to_json()
 
-            # Add attempt count information for authenticated users
-            if include_attempts and current_user_id:
-                user_attempts = Score.query.filter_by(
-                    quiz_id=quiz.id,
-                    user_id=current_user_id
-                ).count()
-                quiz_data['user_attempts'] = user_attempts
-                quiz_data['attempts_left'] = max(0, 5 - user_attempts)
+                # Add attempt count information for authenticated users
+                if include_attempts and current_user_id:
+                    user_attempts = Score.query.filter_by(
+                        quiz_id=quiz.id,
+                        user_id=current_user_id
+                    ).count()
+                    quiz_data['user_attempts'] = user_attempts
+                    quiz_data['attempts_left'] = max(0, 5 - user_attempts)
 
-            quiz_list.append(quiz_data)
+                quiz_list.append(quiz_data)
 
-        # Cache quiz list for 5 minutes
-        try:
-            cache.set(cache_key, quiz_list, timeout=300)
-        except Exception as e:
-            print(f"Cache set error: {e}")
+            # Cache quiz list for 5 minutes
+            try:
+                cache.set(cache_key, quiz_list, timeout=300)
+            except Exception as e:
+                print(f"Cache set error: {e}")
 
-        return quiz_list, 200
+            return quiz_list, 200
 
         except Exception as e:
             print(f"Quiz API error: {e}")

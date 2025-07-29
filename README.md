@@ -110,4 +110,12 @@ python -m celery -A app.celery_worker beat --loglevel=info
 
 ---
 
+First, ensure you have these 5 terminals running:
+
+Redis: .\Redis\redis-server.exe
+Backend: cd backend && python run.py
+Frontend: cd frontend && npm run dev
+Celery Worker: cd backend && python -m celery -A app.celery_worker worker --loglevel=info --pool=solo
+Celery Beat: cd backend && python -m celery -A app.celery_worker beat --loglevel=info
+
 **MAD II Project - Quiz Master V2 with Redis, Celery & Background Jobs**
