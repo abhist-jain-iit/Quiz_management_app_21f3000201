@@ -111,4 +111,6 @@ python -m celery -A app.celery_worker beat --loglevel=info
 - Email: dummy@example.com
 - Password: dummy123
 
-## Testing Instructions
+## Video and Report:
+Video Link: [Link](https://drive.google.com/file/d/1oOhgWDHy1l-jOmDEh7A2zmPevMoH_XW6/view?usp=sharing)
+Report: [Link](https://drive.google.com/file/d/1_-skdLAB9mZPlI_Uz5YOurAqwO9Uh9wK/view?usp=sharing)
